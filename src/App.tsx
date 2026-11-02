@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import './App.css'
 import PoliticalTools from './PoliticalTools'
+import { JusticeScale01Icon } from './JusticeScale01Icon'
 
 type Theme = 'light' | 'dark'
 type Widget = 'subjects' | 'deadlines' | 'activity' | 'goals' | 'stats'
@@ -609,7 +610,7 @@ function App() {
   return (
     <div className={`app-shell ${theme}`}>
       <aside className="sidebar">
-        <div className="brand"><span className="brand-mark">P</span><span>polis</span></div>
+        <div className="brand"><span className="brand-mark"><JusticeScale01Icon size={19} aria-hidden="true" /></span><span>polis</span></div>
         <div className="profile-card"><div className="avatar">{profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</div><div><strong>{profile.name || 'Set up profile'}</strong><span>{profile.term || 'Add your academic details'}</span></div><button className="more-button" onClick={() => setModal('profile')} aria-label="Edit profile">•••</button></div>
         <button className="mobile-nav-toggle" aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileNavOpen} aria-controls="main-navigation" onClick={() => setMobileNavOpen((open) => !open)}><span className="mobile-nav-current"><small>SECTIONS</small><strong>{activeNav}</strong></span><span className={mobileNavOpen ? 'mobile-nav-chevron open' : 'mobile-nav-chevron'} aria-hidden="true">⌄</span></button>
         <nav id="main-navigation" className={mobileNavOpen ? 'nav-list mobile-open' : 'nav-list'} aria-label="Main navigation">

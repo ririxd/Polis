@@ -410,6 +410,13 @@ def create_knowledge_entity(body: dict[str, Any]):
     )
 
 
+@app.delete("/api/knowledge/entities/{entity_id}", status_code=204)
+def delete_knowledge_entity(entity_id: int):
+    with pool.connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM knowledge_entities WHERE id = %s", (entity_id,))
+
+
 @app.get("/api/knowledge/relationships")
 def list_knowledge_relationships():
     return rows(

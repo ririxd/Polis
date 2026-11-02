@@ -1,4 +1,25 @@
 .political-tools-page { padding-bottom: 36px; }
+.philippine-governance-page > .page-heading:not(.philippines-heading) { display: none; }
+.philippine-governance-page .philippines-heading { margin-bottom: 16px; }
+.election-study-grid, .rights-study-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+.election-study-grid article, .rights-study-grid article { padding: 17px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); }
+.election-study-grid article h3, .rights-study-grid article h3, .voter-basics h3 { margin: 6px 0 8px; color: var(--ink); font: 500 16px Georgia, serif; }
+.election-study-grid article p, .rights-study-grid article p, .voter-basics p, .local-unit-explainer p, .rights-note p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.65; }
+.election-study-grid article small { display: block; margin-top: 12px; color: var(--soft); font-size: 9px; }
+.voter-basics { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 13px; padding: 17px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); }
+.voter-basics > div:first-child { max-width: 510px; }
+.voter-basics .constitution-actions { margin: 0; }
+.local-unit-explainer { margin: 20px 0 5px; padding: 15px; border-left: 3px solid var(--purple); border-radius: 6px; background: var(--surface); }
+.local-unit-explainer p { margin-top: 7px; }
+.rights-study-grid article .eyebrow { color: var(--purple); }
+.rights-note { margin-top: 13px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.rights-note strong { color: var(--ink); font-size: 10px; }
+.rights-note p { margin-top: 5px; }
+@media (max-width: 600px) {
+  .election-study-grid, .rights-study-grid { grid-template-columns: 1fr; }
+  .voter-basics { align-items: stretch; flex-direction: column; }
+  .voter-basics .constitution-actions { align-items: flex-start; }
+}
 .source-button { display: inline-block; text-decoration: none; }
 .political-tool-tabs { display: flex; gap: 7px; overflow-x: auto; margin: 0 0 16px; padding-bottom: 2px; border-bottom: 1px solid var(--line); }
 .political-tool-tabs button { flex: 0 0 auto; padding: 11px 13px; border: 0; border-bottom: 2px solid transparent; color: var(--muted); background: transparent; font-size: 11px; }

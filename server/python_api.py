@@ -386,7 +386,7 @@ async def transcribe_recitation(file: UploadFile = File(...)):
 
 
 def debate_payload(debate_id: int, report: dict[str, Any] | None = None) -> dict[str, Any]:
-    debate = one("SELECT id, topic, position, summary, score, created_at FROM debates WHERE id = %s", (debate_id,))
+    debate = one("SELECT id, topic, position, summary, score, report, created_at FROM debates WHERE id = %s", (debate_id,))
     if not debate:
         raise HTTPException(404, "Debate not found")
     debate["turns"] = rows(
@@ -395,7 +395,19 @@ def debate_payload(debate_id: int, report: dict[str, Any] | None = None) -> dict
     )
     if report:
         debate["report"] = report
+    elif not debate["report"]:
+        debate.pop("report")
     return debate
+
+
+@app.get("/api/debates")
+def list_debates():
+    return rows("SELECT id, topic, position, summary, score, report, created_at FROM debates ORDER BY created_at DESC LIMIT 20")
+
+
+@app.get("/api/debates/{debate_id}")
+def get_debate(debate_id: int):
+    return debate_payload(debate_id)
 
 
 @app.post("/api/debates", status_code=201)
@@ -477,7 +489,7 @@ Return JSON with score (0-100), summary (2 sentences), strengths (array), improv
             return debate_payload(debate_id)
 
         score = report.get("score")
-        one("UPDATE debates SET score = %s, summary = %s WHERE id = %s RETURNING id", (score, str(report.get("summary", "")), debate_id))
+        one("UPDATE debates SET score = %s, summary = %s, report = %s WHERE id = %s RETURNING id", (score, str(report.get("summary", "")), json.dumps(report), debate_id))
         return debate_payload(debate_id, report)
     except HTTPException:
         raise

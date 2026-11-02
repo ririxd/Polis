@@ -29,14 +29,14 @@
 .app-shell.dark { --bg: #2b2025; --surface: #38282f; --sidebar: #21181d; --line: #5b3b48; --ink: #fff1f6; --muted: #d1a5b5; --soft: #a8798b; --purple: #f08aae; }
 .debate-heading-actions .debate-back-button { margin: 0; padding: 9px 13px; border: 1px solid var(--purple); border-radius: 7px; color: var(--purple); background: var(--surface); font-weight: 500; transition: color .15s, background .15s, box-shadow .15s; }.debate-heading-actions .debate-back-button:hover { color: #fff; background: var(--purple); box-shadow: 0 3px 10px color-mix(in srgb, var(--purple) 25%, transparent); }.debate-heading-actions .debate-back-button:focus-visible { outline: 2px solid var(--purple); outline-offset: 3px; }
 .debate-heading-actions > .text-button { margin: 0; padding: 9px 13px; border: 1px solid var(--purple); border-radius: 7px; color: var(--purple); background: color-mix(in srgb, var(--purple) 7%, var(--surface)); font-weight: 500; transition: color .15s, background .15s, box-shadow .15s; }.debate-heading-actions > .text-button:hover { color: #fff; background: var(--purple); box-shadow: 0 3px 10px color-mix(in srgb, var(--purple) 25%, transparent); }
-.mobile-nav-toggle { display: none; }
+.mobile-nav-toggle { display: none !important; }
 @media (max-width: 760px) {
   .app-shell { display: block; min-height: 100dvh; overflow-x: clip; }
   .sidebar { position: sticky; top: 0; z-index: 8; width: 100%; padding: 9px 12px 10px; overflow: visible; border-right: 0; border-bottom: 1px solid var(--line); }
   .brand { padding: 0 3px 8px; font-size: 21px; }
   .brand-mark { width: 25px; height: 25px; }
   .profile-card, .sidebar-bottom { display: none; }
-  .mobile-nav-toggle { width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--surface); text-align: left; cursor: pointer; }
+  .mobile-nav-toggle { width: 100%; min-height: 46px; display: flex !important; align-items: center; justify-content: space-between; padding: 6px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--surface); text-align: left; cursor: pointer; }
   .mobile-nav-current small, .mobile-nav-current strong { display: block; }
   .mobile-nav-current small { margin-bottom: 3px; color: var(--soft); font: 8px 'DM Mono', monospace; letter-spacing: 1px; }
   .mobile-nav-current strong { color: var(--purple); font-size: 12px; font-weight: 600; }

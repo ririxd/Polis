@@ -385,6 +385,106 @@ async def transcribe_recitation(file: UploadFile = File(...)):
         raise HTTPException(502, "Could not transcribe the audio answer") from error
 
 
+def debate_payload(debate_id: int, report: dict[str, Any] | None = None) -> dict[str, Any]:
+    debate = one("SELECT id, topic, position, summary, score, created_at FROM debates WHERE id = %s", (debate_id,))
+    if not debate:
+        raise HTTPException(404, "Debate not found")
+    debate["turns"] = rows(
+        "SELECT id, speaker, content, evaluation, position FROM debate_arguments WHERE debate_id = %s ORDER BY position",
+        (debate_id,),
+    )
+    if report:
+        debate["report"] = report
+    return debate
+
+
+@app.post("/api/debates", status_code=201)
+def create_debate(body: dict[str, Any]):
+    topic = required_text(body.get("topic"), "topic")
+    position = body.get("position")
+    if position not in ("for", "against"):
+        raise HTTPException(400, "position must be for or against")
+    debate = one(
+        "INSERT INTO debates (topic, position) VALUES (%s, %s) RETURNING id",
+        (topic, position),
+    )
+    try:
+        opening = ai_json(f"""You are a rigorous, respectful political debate partner.
+Motion: {topic}
+The student is arguing {position}. You argue the opposing side.
+Give a concise opening statement with one clear claim and reasoning, ending with one direct question to the student.
+Return JSON: {{"content":"..."}}.""")
+        one(
+            "INSERT INTO debate_arguments (debate_id, speaker, content, position) VALUES (%s, 'ai', %s, 1) RETURNING id",
+            (debate["id"], required_text(opening.get("content"), "opening")),
+        )
+    except Exception as error:
+        one("DELETE FROM debates WHERE id = %s RETURNING id", (debate["id"],))
+        if isinstance(error, HTTPException):
+            raise
+        raise HTTPException(502, "Could not prepare the AI debate partner") from error
+    return debate_payload(debate["id"])
+
+
+@app.post("/api/debates/{debate_id}/arguments")
+def submit_debate_argument(debate_id: int, body: dict[str, Any]):
+    argument = required_text(body.get("argument"), "argument")
+    debate = one("SELECT id, topic, position FROM debates WHERE id = %s", (debate_id,))
+    if not debate:
+        raise HTTPException(404, "Debate not found")
+    history = rows("SELECT speaker, content FROM debate_arguments WHERE debate_id = %s ORDER BY position", (debate_id,))
+    if not history or history[-1]["speaker"] != "ai":
+        raise HTTPException(409, "Wait for the AI partner before submitting another argument")
+    user_round = sum(1 for turn in history if turn["speaker"] == "user") + 1
+    if user_round > 3:
+        raise HTTPException(409, "This debate is complete")
+    try:
+        evaluation = ai_json(f"""Evaluate this argument in a political debate. Be constructive and identify fallacies only when clearly present.
+Motion: {debate['topic']}
+Student's side: {debate['position']}
+Student argument: {argument}
+Return JSON with score (0-100), feedback (one or two sentences), strengths (array), improvements (array), fallacies (array of fallacy names or empty).""")
+        transcript = "\n".join(f"{turn['speaker']}: {turn['content']}" for turn in history[-5:])
+        if user_round < 3:
+            reply = ai_json(f"""Continue as a fair, challenging political debate opponent. Respond directly to the student's argument, identify the strongest counterpoint, and end with a focused question. Keep it under 120 words.
+Motion: {debate['topic']}
+Your side: {'against' if debate['position'] == 'for' else 'for'}
+Recent debate:
+{transcript}
+student: {argument}
+Return JSON: {{"content":"..."}}.""")
+            partner_content = required_text(reply.get("content"), "reply")
+            report = None
+        else:
+            report = ai_json(f"""Create a concise performance report for this political debate.
+Motion: {debate['topic']}
+Student's side: {debate['position']}
+Student arguments:
+{transcript}
+student: {argument}
+Return JSON with score (0-100), summary (2 sentences), strengths (array), improvements (array), fallacies (array; empty if none clearly present).""")
+            partner_content = None
+
+        one(
+            "INSERT INTO debate_arguments (debate_id, speaker, content, evaluation, position) VALUES (%s, 'user', %s, %s, %s) RETURNING id",
+            (debate_id, argument, json.dumps(evaluation), len(history) + 1),
+        )
+        if partner_content:
+            one(
+                "INSERT INTO debate_arguments (debate_id, speaker, content, position) VALUES (%s, 'ai', %s, %s) RETURNING id",
+                (debate_id, partner_content, len(history) + 2),
+            )
+            return debate_payload(debate_id)
+
+        score = report.get("score")
+        one("UPDATE debates SET score = %s, summary = %s WHERE id = %s RETURNING id", (score, str(report.get("summary", "")), debate_id))
+        return debate_payload(debate_id, report)
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(502, "Could not evaluate the argument or generate the debate response") from error
+
+
 @app.get("/api/knowledge/entities")
 def list_knowledge_entities(search: str = ""):
     pattern = f"%{search.strip()}%"

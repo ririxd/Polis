@@ -9,6 +9,8 @@ import psycopg
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
@@ -203,6 +205,16 @@ def delete_goal(item_id: int):
     with pool.connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute("DELETE FROM goals WHERE id = %s", (item_id,))
+
+
+DIST_DIR = ROOT / "dist"
+if DIST_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=DIST_DIR / "assets"), name="assets")
+
+
+@app.get("/", include_in_schema=False)
+def frontend() -> FileResponse:
+    return FileResponse(DIST_DIR / "index.html")
 
 
 @app.get("/api/subjects")

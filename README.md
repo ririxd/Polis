@@ -21,7 +21,7 @@ The previous Express/SQLite implementation remains in `server/index.cjs` for ref
 
 ### Deploying on Vercel
 
-Vercel serves the Vite build from `dist` and detects the FastAPI app from `api/index.py`. Do not force the Vercel Framework Preset to Vite; the Python function must be detected as well. Add these project environment variables in Vercel:
+Vercel detects the root `index.py` FastAPI app. FastAPI serves the built React files from `dist` and handles the `/api/*` routes. Do not force the Vercel Framework Preset to Vite. Add these project environment variables in Vercel:
 
 - `DATABASE_URL`: Neon pooled connection string for web requests.
 - `NEON_REALTIME_URL`: the public Realtime URL, if the client uses Realtime.

@@ -386,23 +386,26 @@ async def transcribe_recitation(file: UploadFile = File(...)):
 
 
 def debate_payload(debate_id: int, report: dict[str, Any] | None = None) -> dict[str, Any]:
-    debate = one("SELECT id, topic, position, summary, score, report, created_at FROM debates WHERE id = %s", (debate_id,))
+    debate = one("SELECT id, topic, position, summary, score, created_at FROM debates WHERE id = %s", (debate_id,))
     if not debate:
         raise HTTPException(404, "Debate not found")
     debate["turns"] = rows(
         "SELECT id, speaker, content, evaluation, position FROM debate_arguments WHERE debate_id = %s ORDER BY position",
         (debate_id,),
     )
+    if report is None and debate["score"] is not None:
+        final_turn = next((turn for turn in reversed(debate["turns"]) if turn["speaker"] == "user"), None)
+        report = (final_turn or {}).get("evaluation", {}).get("report")
+        if not report:
+            report = {"score": debate["score"], "summary": debate["summary"]}
     if report:
         debate["report"] = report
-    elif not debate["report"]:
-        debate.pop("report")
     return debate
 
 
 @app.get("/api/debates")
 def list_debates():
-    return rows("SELECT id, topic, position, summary, score, report, created_at FROM debates ORDER BY created_at DESC LIMIT 20")
+    return rows("SELECT id, topic, position, summary, score, created_at FROM debates ORDER BY created_at DESC LIMIT 20")
 
 
 @app.get("/api/debates/{debate_id}")
@@ -477,19 +480,24 @@ student: {argument}
 Return JSON with score (0-100), summary (2 sentences), strengths (array), improvements (array), fallacies (array; empty if none clearly present).""")
             partner_content = None
 
-        one(
-            "INSERT INTO debate_arguments (debate_id, speaker, content, evaluation, position) VALUES (%s, 'user', %s, %s, %s) RETURNING id",
-            (debate_id, argument, json.dumps(evaluation), len(history) + 1),
-        )
         if partner_content:
+            one(
+                "INSERT INTO debate_arguments (debate_id, speaker, content, evaluation, position) VALUES (%s, 'user', %s, %s, %s) RETURNING id",
+                (debate_id, argument, json.dumps(evaluation), len(history) + 1),
+            )
             one(
                 "INSERT INTO debate_arguments (debate_id, speaker, content, position) VALUES (%s, 'ai', %s, %s) RETURNING id",
                 (debate_id, partner_content, len(history) + 2),
             )
             return debate_payload(debate_id)
 
+        evaluation["report"] = report
         score = report.get("score")
-        one("UPDATE debates SET score = %s, summary = %s, report = %s WHERE id = %s RETURNING id", (score, str(report.get("summary", "")), json.dumps(report), debate_id))
+        one(
+            "INSERT INTO debate_arguments (debate_id, speaker, content, evaluation, position) VALUES (%s, 'user', %s, %s, %s) RETURNING id",
+            (debate_id, argument, json.dumps(evaluation), len(history) + 1),
+        )
+        one("UPDATE debates SET score = %s, summary = %s WHERE id = %s RETURNING id", (score, str(report.get("summary", "")), debate_id))
         return debate_payload(debate_id, report)
     except HTTPException:
         raise

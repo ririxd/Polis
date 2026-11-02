@@ -278,10 +278,11 @@ function App() {
     setDebateBusy(true)
     try {
       const response = await fetch('/api/debates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topic: debateTopic.trim(), position: debatePosition }) })
-      if (!response.ok) throw new Error()
-      setDebateSession(await response.json())
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(typeof result.detail === 'string' ? result.detail : 'The debate service returned an error.')
+      setDebateSession(result)
       setDebateArgument('')
-    } catch { showToast('Could not start debate. Check that AI is configured and try again.') }
+    } catch (error) { showToast(error instanceof Error ? error.message : 'Could not start debate.') }
     finally { setDebateBusy(false) }
   }
 
@@ -291,10 +292,11 @@ function App() {
     setDebateBusy(true)
     try {
       const response = await fetch(`/api/debates/${debateSession.id}/arguments`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ argument: debateArgument.trim() }) })
-      if (!response.ok) throw new Error()
-      setDebateSession(await response.json())
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(typeof result.detail === 'string' ? result.detail : 'The debate service returned an error.')
+      setDebateSession(result)
       setDebateArgument('')
-    } catch { showToast('Could not submit argument. Please try again.') }
+    } catch (error) { showToast(error instanceof Error ? error.message : 'Could not submit argument.') }
     finally { setDebateBusy(false) }
   }
 

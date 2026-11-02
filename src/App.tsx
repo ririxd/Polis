@@ -16,6 +16,45 @@ type Annotation = { id: number; subject_id: number; note_id: number | null; quot
 type DocumentRecord = { id: number; subject_id: number | null; name: string; file_type: string; size: number; extracted_text: string; folder: string; tags: string }
 const activity: Activity[] = []
 
+const featureCatalog: Record<string, { eyebrow: string; title: string; description: string; features: string[] }> = {
+  'AI recitation': {
+    eyebrow: 'LEARNING LAB',
+    title: 'AI oral recitation',
+    description: 'Practice one question at a time with written or voice answers, evaluation, and performance history.',
+    features: ['Question generation', 'Written and voice answers', 'Conceptual accuracy assessment', 'Follow-up questions', 'Recitation history'],
+  },
+  'Knowledge graph': {
+    eyebrow: 'POLITICAL KNOWLEDGE',
+    title: 'Political knowledge graph',
+    description: 'Connect thinkers, theories, ideologies, concepts, events, and your related notes.',
+    features: ['Interactive relationships', 'Thinker and theory profiles', 'Historical events', 'Related notes integration', 'User-created connections'],
+  },
+  'Political tools': {
+    eyebrow: 'POLITICAL SCIENCE',
+    title: 'Political science tools',
+    description: 'Compare political systems and explore constitutional, historical, and governance references.',
+    features: ['Theory and ideology comparator', 'Political timeline', 'Governance explorer', 'Constitution explorer', 'Philippine government module'],
+  },
+  'Debate simulator': {
+    eyebrow: 'ARGUMENT PRACTICE',
+    title: 'Political debate simulator',
+    description: 'Build arguments, practice rebuttals, and receive structured feedback on evidence and logic.',
+    features: ['AI debate partner', 'Topic and position selection', 'Counterarguments and rebuttals', 'Fallacy identification', 'Debate performance reports'],
+  },
+  'Research assistant': {
+    eyebrow: 'RESEARCH STUDIO',
+    title: 'Research assistant',
+    description: 'Organize research questions, sources, annotations, outlines, citations, and thesis development.',
+    features: ['Research projects', 'Academic source library', 'APA 7 citation workspace', 'Literature review organizer', 'Bibliography export'],
+  },
+  'Philippine politics': {
+    eyebrow: 'PHILIPPINE GOVERNANCE',
+    title: 'Philippine politics & governance',
+    description: 'Explore the Constitution, branches of government, elections, history, and public administration.',
+    features: ['1987 Constitution explorer', 'Executive, legislative, and judicial branches', 'Local government structure', 'Electoral system', 'Human rights and civil liberties'],
+  },
+}
+
 const initialWidgets: Record<Widget, boolean> = {
   subjects: true,
   deadlines: true,
@@ -263,7 +302,7 @@ function App() {
         <div className="brand"><span className="brand-mark">P</span><span>polis</span></div>
         <div className="profile-card"><div className="avatar">{profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</div><div><strong>{profile.name || 'Set up profile'}</strong><span>{profile.term || 'Add your academic details'}</span></div><button className="more-button" onClick={() => setModal('profile')} aria-label="Edit profile">•••</button></div>
         <nav className="nav-list" aria-label="Main navigation">
-          {['Overview', 'My courses', 'Calendar', 'Insights'].map((item) => <button key={item} className={activeNav === item ? 'nav-item active' : 'nav-item'} onClick={() => openNav(item)}><span className="nav-icon">{item === 'Overview' ? '⌂' : item === 'My courses' ? '▤' : item === 'Calendar' ? '□' : '⌁'}</span>{item}</button>)}
+          {['Overview', 'My courses', 'Calendar', 'Insights', 'AI recitation', 'Knowledge graph', 'Political tools', 'Debate simulator', 'Research assistant', 'Philippine politics'].map((item) => <button key={item} className={activeNav === item ? 'nav-item active' : 'nav-item'} onClick={() => openNav(item)}><span className="nav-icon">{item === 'Overview' ? '⌂' : item === 'My courses' ? '▤' : item === 'Calendar' ? '□' : item === 'Insights' ? '⌁' : item === 'Knowledge graph' ? '⌘' : item === 'Debate simulator' ? '◇' : item === 'Research assistant' ? '⌕' : '✦'}</span>{item}</button>)}
         </nav>
         <div className="sidebar-bottom">
           <button className="nav-item" onClick={() => setModal('settings')}><span className="nav-icon">⚙</span>Settings</button>
@@ -300,6 +339,7 @@ function App() {
         {activeNav === 'Calendar' && <section className="page-view"><div className="page-heading"><div><p className="eyebrow">NOVEMBER 2026</p><h1>Academic calendar</h1><p className="intro">Select any date to schedule an event, reminder, or study session.</p></div><button className="primary-button" onClick={() => { setSelectedDate(1); setModal('calendar-event') }}>+ Add event</button></div><div className="calendar-layout"><div className="calendar-card"><div className="calendar-header"><button onClick={() => showToast('Previous month is not available in this demo')}>←</button><strong>November 2026</strong><button onClick={() => showToast('Next month is not available in this demo')}>→</button></div><div className="calendar-days">{['S','M','T','W','T','F','S'].map((day, index) => <span className="calendar-weekday" key={`${day}-${index}`}>{day}</span>)}{Array.from({ length: 30 }, (_, index) => { const date = index + 1; const hasEvent = calendarEvents.some((item) => item.date === date); return <button className={date === selectedDate ? 'calendar-day selected' : 'calendar-day'} key={date} onClick={() => { setSelectedDate(date); setModal('calendar-event') }}>{date}{hasEvent && <i className="calendar-event-dot" />}</button> })}</div></div><div className="calendar-agenda"><p className="eyebrow">UPCOMING</p><h2>Deadlines & events</h2>{deadlineItems.map((deadline) => <div className="agenda-item" key={deadline.title}><span>{deadline.date}</span><div><strong>{deadline.title}</strong><small>{deadline.subject}</small></div></div>)}{calendarEvents.map((calendarEvent, index) => <div className="agenda-item" key={`${calendarEvent.title}-${index}`}><span>Nov {calendarEvent.date}</span><div><strong>{calendarEvent.title}</strong><small>{calendarEvent.type} · {calendarEvent.time}</small></div></div>)}</div></div></section>}
 
         {activeNav === 'Insights' && <section className="page-view"><div className="page-heading"><div><p className="eyebrow">YOUR PROGRESS</p><h1>Academic insights</h1><p className="intro">Live metrics based only on the data you add.</p></div><button className="date-button" onClick={() => showToast('Insights are calculated from your current records')}>Live data <span>⌄</span></button></div><div className="insight-grid"><article className="insight-highlight"><p className="eyebrow">AVERAGE PROGRESS</p><strong>{averageProgress}%</strong><span>{subjectItems.length ? 'Across your subjects' : 'Add subjects to track progress'}</span><div className="insight-line green"><i style={{ width: `${averageProgress}%` }} /></div></article><article className="insight-chart"><p className="eyebrow">ACADEMIC RECORDS</p><h2>{subjectItems.length + deadlineItems.length + calendarEvents.length} items tracked</h2><div className="empty-state">{subjectItems.length || deadlineItems.length || calendarEvents.length ? 'Your overview updates automatically when records change.' : 'Add a subject, deadline, or event to start seeing insights.'}</div></article></div><div className="insight-note"><span>✦</span><div><strong>{subjectItems.length ? 'Keep building your academic picture.' : 'Your insights are ready when you are.'}</strong><p>All metrics on this page are derived from your current subjects, progress, deadlines, and calendar events. No placeholder data is shown.</p></div></div></section>}
+        {featureCatalog[activeNav] && <section className="page-view feature-hub"><div className="page-heading"><div><p className="eyebrow">{featureCatalog[activeNav].eyebrow}</p><h1>{featureCatalog[activeNav].title}</h1><p className="intro">{featureCatalog[activeNav].description}</p></div><button className="primary-button" onClick={() => showToast('This workspace is ready for the next implementation milestone')}>Explore workspace</button></div><div className="feature-grid">{featureCatalog[activeNav].features.map((feature) => <article className="feature-card" key={feature}><span>✦</span><h2>{feature}</h2><p>Foundation ready for structured data, progress tracking, and future AI-assisted workflows.</p></article>)}</div></section>}
         <footer><span>Built for a life of intention.</span><span>Need a hand? <button className="footer-link" onClick={() => showToast('Guide coming soon — your dashboard is ready to explore.')}>Visit the guide</button></span></footer>
 
         {modal && <div className="modal-backdrop" onClick={() => setModal(null)}><section className="modal" onClick={(event) => event.stopPropagation()}>

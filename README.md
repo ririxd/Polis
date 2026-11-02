@@ -45,6 +45,15 @@ The local API loads Neon variables from `.env.local` and exposes `GET /api/neon/
 - `GET/POST /api/annotations`
 - `GET/POST /api/documents`
 
+### Product foundation
+
+The schema also reserves first-class Postgres tables for AI recitation, debate practice,
+political knowledge graphs, research projects and sources, study sessions, and application
+settings. The feature navigation is intentionally scaffolded before wiring provider-backed
+workflows. Set `OPENAI_API_KEY` only in Vercel or a local ignored environment file when the
+AI milestone is implemented; never commit it. Voice features use browser microphone
+permissions and a speech service, and are not enabled by the schema migration alone.
+
 Each subject opens an Academic Workspace with Markdown/rich-text notes, autosave on blur, folders/tags, favorites-ready records, material links, local document metadata, TXT/Markdown text extraction, annotations, workspace search, and browser print/PDF export.
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.

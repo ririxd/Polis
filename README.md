@@ -26,6 +26,10 @@ Vercel detects the root `index.py` FastAPI app. FastAPI serves the built React f
 - `DATABASE_URL`: Neon pooled connection string for web requests.
 - `NEON_REALTIME_URL`: the public Realtime URL, if the client uses Realtime.
 - `POLIS_AUTO_MIGRATE`: set to `false` for deployments; the Neon schema is in `server/schema.sql`.
+- `GROQ_API_KEY`: optional Groq key for the OpenAI-compatible AI workflows.
+- `GROQ_MODEL`: optional Groq model override; defaults to `llama-3.3-70b-versatile`.
+- `OPENAI_API_KEY`: optional fallback/provider key for AI workflows and audio transcription.
+- `TRANSCRIBE_MODEL`: optional transcription model override.
 
 Apply schema changes separately with `DATABASE_URL_UNPOOLED` and the direct migration workflow. Do not use the unpooled URL for normal request traffic.
 
@@ -50,9 +54,9 @@ The local API loads Neon variables from `.env.local` and exposes `GET /api/neon/
 The schema also reserves first-class Postgres tables for AI recitation, debate practice,
 political knowledge graphs, research projects and sources, study sessions, and application
 settings. The feature navigation is intentionally scaffolded before wiring provider-backed
-workflows. Set `OPENAI_API_KEY` only in Vercel or a local ignored environment file when the
-AI milestone is implemented; never commit it. Voice features use browser microphone
-permissions and a speech service, and are not enabled by the schema migration alone.
+workflows. Set provider keys only in Vercel or a local ignored environment file; never commit them.
+When both keys exist, Groq is used for text generation and transcription. Voice answers
+use browser microphone permissions and the configured transcription provider.
 
 Each subject opens an Academic Workspace with Markdown/rich-text notes, autosave on blur, folders/tags, favorites-ready records, material links, local document metadata, TXT/Markdown text extraction, annotations, workspace search, and browser print/PDF export.
 

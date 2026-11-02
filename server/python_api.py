@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import os
+import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
+from fastapi import File, UploadFile
+from openai import OpenAI
 import psycopg
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
@@ -51,6 +54,45 @@ def required_text(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise HTTPException(status_code=400, detail=f"{field} is required")
     return value.strip()
+
+
+def ai_client() -> tuple[OpenAI, str]:
+    if os.getenv("GROQ_API_KEY"):
+        return (
+            OpenAI(api_key=os.environ["GROQ_API_KEY"], base_url="https://api.groq.com/openai/v1"),
+            os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        )
+    if os.getenv("OPENAI_API_KEY"):
+        return OpenAI(api_key=os.environ["OPENAI_API_KEY"]), os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    raise HTTPException(503, "GROQ_API_KEY or OPENAI_API_KEY is not configured")
+
+
+def json_output(text: str) -> dict[str, Any]:
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+    try:
+        value = json.loads(cleaned)
+    except json.JSONDecodeError as error:
+        raise HTTPException(502, "The AI returned an invalid structured response") from error
+    if not isinstance(value, dict):
+        raise HTTPException(502, "The AI returned an invalid response shape")
+    return value
+
+
+def ai_json(prompt: str) -> dict[str, Any]:
+    client, model = ai_client()
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": "Return only valid JSON. Do not use markdown fences."},
+            {"role": "user", "content": prompt},
+        ],
+    )
+    content = response.choices[0].message.content
+    if not content:
+        raise HTTPException(502, "The AI returned an empty response")
+    return json_output(content)
 
 
 @asynccontextmanager
@@ -251,6 +293,96 @@ def delete_subject(item_id: int):
             cursor.execute("DELETE FROM materials WHERE subject_id = %s", (item_id,))
             cursor.execute("DELETE FROM documents WHERE subject_id = %s", (item_id,))
             cursor.execute("DELETE FROM subjects WHERE id = %s", (item_id,))
+
+
+@app.get("/api/recitations")
+def list_recitations():
+    return rows(
+        """SELECT id, title, mode, score, summary, created_at
+           FROM recitation_sessions ORDER BY created_at DESC LIMIT 20"""
+    )
+
+
+@app.post("/api/recitations", status_code=201)
+def create_recitation(body: dict[str, Any]):
+    title = required_text(body.get("title"), "title")
+    subject_id = body.get("subjectId")
+    session = one(
+        """INSERT INTO recitation_sessions (subject_id, title, mode)
+           VALUES (%s, %s, %s) RETURNING id, subject_id, title, mode, score, summary, created_at""",
+        (subject_id, title, body.get("mode", "written")),
+    )
+    if not session:
+        raise HTTPException(500, "Could not create recitation session")
+    try:
+        generated = ai_json(f"""Create one oral recitation question for a political science student.
+Topic: {title}
+Return only JSON with this shape: {{"prompt":"...", "follow_up":"..."}}.
+The question must require explanation, not a yes/no answer.""")
+        question = one(
+            """INSERT INTO recitation_questions (session_id, prompt, position)
+               VALUES (%s, %s, 1) RETURNING id, session_id, prompt, answer, answer_mode, evaluation, position""",
+            (session["id"], required_text(generated.get("prompt"), "prompt")),
+        )
+        return {"session": session, "question": question, "followUp": generated.get("follow_up", "")}
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(502, "Could not generate an AI recitation question") from error
+
+
+@app.post("/api/recitations/questions/{question_id}/answer")
+def answer_recitation(question_id: int, body: dict[str, Any]):
+    answer = required_text(body.get("answer"), "answer")
+    question = one(
+        """SELECT q.id, q.prompt, q.session_id, s.title
+           FROM recitation_questions q JOIN recitation_sessions s ON s.id = q.session_id
+           WHERE q.id = %s""",
+        (question_id,),
+    )
+    if not question:
+        raise HTTPException(404, "Recitation question not found")
+    try:
+        evaluation = ai_json(f"""Evaluate this political science oral recitation answer.
+Topic: {question["title"]}
+Question: {question["prompt"]}
+Answer: {answer}
+Return only JSON with keys: score (number 0-100), accuracy (one sentence), strengths (array of strings), improvements (array of strings), follow_up (string).""")
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(502, "Could not evaluate the recitation answer") from error
+    saved = one(
+        """UPDATE recitation_questions
+           SET answer = %s, answer_mode = %s, evaluation = %s
+           WHERE id = %s
+           RETURNING id, session_id, prompt, answer, answer_mode, evaluation, position""",
+        (answer, body.get("answerMode", "written"), json.dumps(evaluation), question_id),
+    )
+    score = evaluation.get("score")
+    if isinstance(score, (int, float)):
+        one("UPDATE recitation_sessions SET score = %s, summary = %s WHERE id = %s RETURNING id", (score, str(evaluation.get("accuracy", "")), question["session_id"]))
+    return saved
+
+
+@app.post("/api/recitations/transcribe")
+async def transcribe_recitation(file: UploadFile = File(...)):
+    if not file.content_type or not file.content_type.startswith("audio/"):
+        raise HTTPException(400, "An audio file is required")
+    content = await file.read()
+    if not content:
+        raise HTTPException(400, "The audio file is empty")
+    try:
+        client, _ = ai_client()
+        transcript = client.audio.transcriptions.create(
+            model=os.getenv("TRANSCRIBE_MODEL", "whisper-large-v3-turbo" if os.getenv("GROQ_API_KEY") else "gpt-4o-mini-transcribe"),
+            file=(file.filename or "recitation.webm", content, file.content_type),
+        )
+        return {"text": transcript.text}
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(502, "Could not transcribe the audio answer") from error
 
 
 @app.get("/api/deadlines")

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import './App.css'
 
 type Theme = 'light' | 'dark'
@@ -14,6 +14,7 @@ type Material = { id: number; subject_id: number; title: string; kind: string; u
 type Note = { id: number; subject_id: number; title: string; content: string; format: string; folder: string; tags: string; favorite: number }
 type Annotation = { id: number; subject_id: number; note_id: number | null; quote: string; comment: string; color: string }
 type DocumentRecord = { id: number; subject_id: number | null; name: string; file_type: string; size: number; extracted_text: string; folder: string; tags: string }
+type RecitationQuestion = { id: number; prompt: string; answer: string; answer_mode: string; evaluation: { score?: number; accuracy?: string; strengths?: string[]; improvements?: string[]; follow_up?: string } }
 const activity: Activity[] = []
 
 const featureCatalog: Record<string, { eyebrow: string; title: string; description: string; features: string[] }> = {
@@ -88,6 +89,13 @@ function App() {
   const [newEvent, setNewEvent] = useState({ title: '', type: 'Event', time: '09:00' })
   const [timerSeconds, setTimerSeconds] = useState(25 * 60)
   const [timerRunning, setTimerRunning] = useState(false)
+  const [recitationTitle, setRecitationTitle] = useState('')
+  const [recitationQuestion, setRecitationQuestion] = useState<RecitationQuestion | null>(null)
+  const [recitationAnswer, setRecitationAnswer] = useState('')
+  const [recitationEvaluation, setRecitationEvaluation] = useState<RecitationQuestion['evaluation'] | null>(null)
+  const [recitationRecording, setRecitationRecording] = useState(false)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
 
   const [toast, setToast] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -118,6 +126,72 @@ function App() {
   const openNav = (item: string) => {
     setActiveNav(item)
     showToast(`${item} view selected`)
+  }
+
+  const startRecitation = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!recitationTitle.trim()) return
+    try {
+      const response = await fetch('/api/recitations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: recitationTitle.trim(), mode: 'written' }) })
+      if (!response.ok) throw new Error('Could not start recitation')
+      const result = await response.json()
+      setRecitationQuestion(result.question)
+      setRecitationEvaluation(null)
+      setRecitationAnswer('')
+    } catch {
+      showToast('Could not start AI recitation')
+    }
+  }
+
+  const submitRecitationAnswer = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!recitationQuestion || !recitationAnswer.trim()) return
+    try {
+      const response = await fetch(`/api/recitations/questions/${recitationQuestion.id}/answer`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answer: recitationAnswer.trim(), answerMode: 'written' }) })
+      if (!response.ok) throw new Error('Could not evaluate answer')
+      const saved = await response.json()
+      setRecitationQuestion(saved)
+      setRecitationEvaluation(saved.evaluation)
+    } catch {
+      showToast('Could not evaluate your answer')
+    }
+  }
+
+  const toggleRecitationRecording = async () => {
+    if (recitationRecording && recorderRef.current) {
+      recorderRef.current.stop()
+      setRecitationRecording(false)
+      return
+    }
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+      showToast('Voice recording is not supported in this browser')
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      audioChunksRef.current = []
+      recorder.ondataavailable = (event) => audioChunksRef.current.push(event.data)
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop())
+        const formData = new FormData()
+        formData.append('file', new Blob(audioChunksRef.current, { type: recorder.mimeType }), 'recitation.webm')
+        try {
+          const response = await fetch('/api/recitations/transcribe', { method: 'POST', body: formData })
+          if (!response.ok) throw new Error('Transcription failed')
+          const result = await response.json()
+          setRecitationAnswer(result.text)
+          showToast('Voice answer transcribed')
+        } catch {
+          showToast('Could not transcribe voice answer')
+        }
+      }
+      recorderRef.current = recorder
+      recorder.start()
+      setRecitationRecording(true)
+    } catch {
+      showToast('Microphone permission is required for voice answers')
+    }
   }
 
   const addDeadline = (event: FormEvent<HTMLFormElement>) => {
@@ -339,7 +413,8 @@ function App() {
         {activeNav === 'Calendar' && <section className="page-view"><div className="page-heading"><div><p className="eyebrow">NOVEMBER 2026</p><h1>Academic calendar</h1><p className="intro">Select any date to schedule an event, reminder, or study session.</p></div><button className="primary-button" onClick={() => { setSelectedDate(1); setModal('calendar-event') }}>+ Add event</button></div><div className="calendar-layout"><div className="calendar-card"><div className="calendar-header"><button onClick={() => showToast('Previous month is not available in this demo')}>←</button><strong>November 2026</strong><button onClick={() => showToast('Next month is not available in this demo')}>→</button></div><div className="calendar-days">{['S','M','T','W','T','F','S'].map((day, index) => <span className="calendar-weekday" key={`${day}-${index}`}>{day}</span>)}{Array.from({ length: 30 }, (_, index) => { const date = index + 1; const hasEvent = calendarEvents.some((item) => item.date === date); return <button className={date === selectedDate ? 'calendar-day selected' : 'calendar-day'} key={date} onClick={() => { setSelectedDate(date); setModal('calendar-event') }}>{date}{hasEvent && <i className="calendar-event-dot" />}</button> })}</div></div><div className="calendar-agenda"><p className="eyebrow">UPCOMING</p><h2>Deadlines & events</h2>{deadlineItems.map((deadline) => <div className="agenda-item" key={deadline.title}><span>{deadline.date}</span><div><strong>{deadline.title}</strong><small>{deadline.subject}</small></div></div>)}{calendarEvents.map((calendarEvent, index) => <div className="agenda-item" key={`${calendarEvent.title}-${index}`}><span>Nov {calendarEvent.date}</span><div><strong>{calendarEvent.title}</strong><small>{calendarEvent.type} · {calendarEvent.time}</small></div></div>)}</div></div></section>}
 
         {activeNav === 'Insights' && <section className="page-view"><div className="page-heading"><div><p className="eyebrow">YOUR PROGRESS</p><h1>Academic insights</h1><p className="intro">Live metrics based only on the data you add.</p></div><button className="date-button" onClick={() => showToast('Insights are calculated from your current records')}>Live data <span>⌄</span></button></div><div className="insight-grid"><article className="insight-highlight"><p className="eyebrow">AVERAGE PROGRESS</p><strong>{averageProgress}%</strong><span>{subjectItems.length ? 'Across your subjects' : 'Add subjects to track progress'}</span><div className="insight-line green"><i style={{ width: `${averageProgress}%` }} /></div></article><article className="insight-chart"><p className="eyebrow">ACADEMIC RECORDS</p><h2>{subjectItems.length + deadlineItems.length + calendarEvents.length} items tracked</h2><div className="empty-state">{subjectItems.length || deadlineItems.length || calendarEvents.length ? 'Your overview updates automatically when records change.' : 'Add a subject, deadline, or event to start seeing insights.'}</div></article></div><div className="insight-note"><span>✦</span><div><strong>{subjectItems.length ? 'Keep building your academic picture.' : 'Your insights are ready when you are.'}</strong><p>All metrics on this page are derived from your current subjects, progress, deadlines, and calendar events. No placeholder data is shown.</p></div></div></section>}
-        {featureCatalog[activeNav] && <section className="page-view feature-hub"><div className="page-heading"><div><p className="eyebrow">{featureCatalog[activeNav].eyebrow}</p><h1>{featureCatalog[activeNav].title}</h1><p className="intro">{featureCatalog[activeNav].description}</p></div><button className="primary-button" onClick={() => showToast('This workspace is ready for the next implementation milestone')}>Explore workspace</button></div><div className="feature-grid">{featureCatalog[activeNav].features.map((feature) => <article className="feature-card" key={feature}><span>✦</span><h2>{feature}</h2><p>Foundation ready for structured data, progress tracking, and future AI-assisted workflows.</p></article>)}</div></section>}
+        {activeNav === 'AI recitation' && <section className="page-view recitation-page"><div className="page-heading"><div><p className="eyebrow">LEARNING LAB</p><h1>AI oral recitation</h1><p className="intro">Practice one question at a time and receive feedback on conceptual accuracy.</p></div></div>{!recitationQuestion && <form className="recitation-start" onSubmit={startRecitation}><label>What should you be tested on?<input className="modal-input" required placeholder="e.g. Marxist theory and political economy" value={recitationTitle} onChange={(event) => setRecitationTitle(event.target.value)} /></label><button className="primary-button" type="submit">Start recitation</button><p>OpenAI generates the question and evaluates your answer securely through the API.</p></form>}{recitationQuestion && <article className="recitation-card"><p className="eyebrow">QUESTION</p><h2>{recitationQuestion.prompt}</h2><form onSubmit={submitRecitationAnswer}><textarea className="recitation-answer" required placeholder="Explain your answer in your own words..." value={recitationAnswer} onChange={(event) => setRecitationAnswer(event.target.value)} /><div className="recitation-actions"><button className="primary-button" type="submit">Submit answer</button><button className={recitationRecording ? 'record-button recording' : 'record-button'} type="button" onClick={toggleRecitationRecording}>{recitationRecording ? 'Stop recording' : 'Record voice answer'}</button></div></form>{recitationEvaluation && <div className="recitation-feedback"><div className="score-badge">{recitationEvaluation.score ?? '—'}<span>/100</span></div><div><p><strong>Conceptual accuracy:</strong> {recitationEvaluation.accuracy}</p><p><strong>Strengths:</strong> {recitationEvaluation.strengths?.join(' ') || 'No strengths recorded.'}</p><p><strong>Improve next:</strong> {recitationEvaluation.improvements?.join(' ') || 'No improvement notes recorded.'}</p>{recitationEvaluation.follow_up && <p><strong>Follow-up:</strong> {recitationEvaluation.follow_up}</p>}</div></div>}</article>}</section>}
+        {activeNav !== 'AI recitation' && featureCatalog[activeNav] && <section className="page-view feature-hub"><div className="page-heading"><div><p className="eyebrow">{featureCatalog[activeNav].eyebrow}</p><h1>{featureCatalog[activeNav].title}</h1><p className="intro">{featureCatalog[activeNav].description}</p></div><button className="primary-button" onClick={() => showToast('This workspace is ready for the next implementation milestone')}>Explore workspace</button></div><div className="feature-grid">{featureCatalog[activeNav].features.map((feature) => <article className="feature-card" key={feature}><span>✦</span><h2>{feature}</h2><p>Foundation ready for structured data, progress tracking, and future AI-assisted workflows.</p></article>)}</div></section>}
         <footer><span>Built for a life of intention.</span><span>Need a hand? <button className="footer-link" onClick={() => showToast('Guide coming soon — your dashboard is ready to explore.')}>Visit the guide</button></span></footer>
 
         {modal && <div className="modal-backdrop" onClick={() => setModal(null)}><section className="modal" onClick={(event) => event.stopPropagation()}>

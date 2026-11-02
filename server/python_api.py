@@ -70,6 +70,7 @@ app.add_middleware(
 )
 
 
+@app.get("/health")
 @app.get("/api/health")
 def health() -> dict[str, Any]:
     database_ok = one("SELECT 1 AS ok") == {"ok": 1}

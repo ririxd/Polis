@@ -85,6 +85,7 @@ const initialWidgets: Record<Widget, boolean> = {
 function App() {
   const [theme, setTheme] = useState<Theme>('light')
   const [activeNav, setActiveNav] = useState('Overview')
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [showCustomizer, setShowCustomizer] = useState(false)
   const [widgets, setWidgets] = useState(initialWidgets)
   const [profile, setProfile] = useState<Profile>({ name: '', term: '', year: '' })
@@ -552,8 +553,9 @@ function App() {
       <aside className="sidebar">
         <div className="brand"><span className="brand-mark">P</span><span>polis</span></div>
         <div className="profile-card"><div className="avatar">{profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</div><div><strong>{profile.name || 'Set up profile'}</strong><span>{profile.term || 'Add your academic details'}</span></div><button className="more-button" onClick={() => setModal('profile')} aria-label="Edit profile">•••</button></div>
-        <nav className="nav-list" aria-label="Main navigation">
-          {['Overview', 'My courses', 'Calendar', 'Insights', 'AI recitation', 'Knowledge graph', 'Political tools', 'Debate simulator', 'Research assistant', 'Philippine politics'].map((item) => <button key={item} className={activeNav === item ? 'nav-item active' : 'nav-item'} onClick={() => openNav(item)}><span className="nav-icon">{item === 'Overview' ? '⌂' : item === 'My courses' ? '▤' : item === 'Calendar' ? '□' : item === 'Insights' ? '⌁' : item === 'Knowledge graph' ? '⌘' : item === 'Debate simulator' ? '◇' : item === 'Research assistant' ? '⌕' : '✦'}</span>{item}</button>)}
+        <button className="mobile-nav-toggle" aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileNavOpen} aria-controls="main-navigation" onClick={() => setMobileNavOpen((open) => !open)}><span className="mobile-nav-current"><small>MENU</small><strong>{activeNav}</strong></span><span className={mobileNavOpen ? 'mobile-nav-chevron open' : 'mobile-nav-chevron'} aria-hidden="true">⌄</span></button>
+        <nav id="main-navigation" className={mobileNavOpen ? 'nav-list mobile-open' : 'nav-list'} aria-label="Main navigation">
+          {['Overview', 'My courses', 'Calendar', 'Insights', 'AI recitation', 'Knowledge graph', 'Political tools', 'Debate simulator', 'Research assistant', 'Philippine politics'].map((item) => <button key={item} aria-current={activeNav === item ? 'page' : undefined} className={activeNav === item ? 'nav-item active' : 'nav-item'} onClick={() => { openNav(item); setMobileNavOpen(false) }}><span className="nav-icon">{item === 'Overview' ? '⌂' : item === 'My courses' ? '▤' : item === 'Calendar' ? '□' : item === 'Insights' ? '⌁' : item === 'Knowledge graph' ? '⌘' : item === 'Debate simulator' ? '◇' : item === 'Research assistant' ? '⌕' : '✦'}</span>{item}</button>)}
         </nav>
         <div className="sidebar-bottom">
           <button className="nav-item" onClick={() => setModal('settings')}><span className="nav-icon">⚙</span>Settings</button>
@@ -561,7 +563,7 @@ function App() {
         </div>
       </aside>
 
-      <main className="main-content">
+      <main className="main-content" onClick={() => { if (mobileNavOpen) setMobileNavOpen(false) }}>
         <header className="topbar"><div className="breadcrumb"><span>Academic space</span><b>/</b><strong>{activeNav}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search" onClick={() => setModal('search')}>⌕</button><button className="icon-button notification-button" aria-label={unreadNotificationCount ? `Notifications, ${unreadNotificationCount} unread` : 'Notifications'} onClick={() => setModal('notifications')}>♢{unreadNotificationCount > 0 && <span className="notification-dot" />}</button><button className="theme-toggle" onClick={() => { setTheme(theme === 'light' ? 'dark' : 'light'); showToast(`${theme === 'light' ? 'Dark' : 'Light'} mode enabled`) }} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>{theme === 'light' ? '☾' : '☀'}</button><button className="mini-avatar" onClick={() => setModal('profile')} aria-label="Open profile">{profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</button></div></header>
         <section className="welcome-row"><div><p className="eyebrow">SUNDAY, NOVEMBER 1, 2026 · WEEK 10</p><h1>{profile.name ? `Good morning, ${profile.name}` : 'Build your academic dashboard'} <span>✦</span></h1><p className="intro">{profile.name ? 'Your academic picture will update as you add progress.' : 'Add your profile and first subject to get started.'}</p></div><div className="welcome-actions"><button className="customize-button" onClick={() => setShowCustomizer(!showCustomizer)}>☷ Customize</button><button className="date-button" onClick={() => setModal('week')}>This week <span>⌄</span></button></div></section>
 

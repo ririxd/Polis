@@ -60,7 +60,7 @@ def ai_client() -> tuple[OpenAI, str]:
     if os.getenv("GROQ_API_KEY"):
         return (
             OpenAI(api_key=os.environ["GROQ_API_KEY"], base_url="https://api.groq.com/openai/v1"),
-            os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+            os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
         )
     if os.getenv("OPENAI_API_KEY"):
         return OpenAI(api_key=os.environ["OPENAI_API_KEY"]), os.getenv("OPENAI_MODEL", "gpt-4o-mini")

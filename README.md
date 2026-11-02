@@ -27,7 +27,7 @@ Vercel detects the root `index.py` FastAPI app. FastAPI serves the built React f
 - `NEON_REALTIME_URL`: the public Realtime URL, if the client uses Realtime.
 - `POLIS_AUTO_MIGRATE`: set to `false` for deployments; the Neon schema is in `server/schema.sql`.
 - `GROQ_API_KEY`: optional Groq key for the OpenAI-compatible AI workflows.
-- `GROQ_MODEL`: optional Groq model override; defaults to `llama-3.3-70b-versatile`.
+- `GROQ_MODEL`: optional Groq model override; defaults to `openai/gpt-oss-120b`.
 - `OPENAI_API_KEY`: optional fallback/provider key for AI workflows and audio transcription.
 - `TRANSCRIBE_MODEL`: optional transcription model override.
 

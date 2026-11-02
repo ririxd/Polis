@@ -1,0 +1,94 @@
+.political-tools-page { padding-bottom: 36px; }
+.source-button { display: inline-block; text-decoration: none; }
+.political-tool-tabs { display: flex; gap: 7px; overflow-x: auto; margin: 0 0 16px; padding-bottom: 2px; border-bottom: 1px solid var(--line); }
+.political-tool-tabs button { flex: 0 0 auto; padding: 11px 13px; border: 0; border-bottom: 2px solid transparent; color: var(--muted); background: transparent; font-size: 11px; }
+.political-tool-tabs button:hover, .political-tool-tabs button.active { color: var(--purple); border-bottom-color: var(--purple); }
+.political-panel { padding: 24px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
+.political-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; margin-bottom: 20px; }
+.political-panel-heading h2 { margin: 0; color: var(--ink); font: 500 22px Georgia, serif; }
+.political-panel-heading > div:first-child > p:last-child { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.compare-selects { display: flex; align-items: end; gap: 10px; min-width: min(490px, 55%); }
+.compare-selects label { flex: 1; color: var(--soft); font-size: 10px; }
+.compare-selects .modal-input { display: block; margin: 6px 0 0; }
+.compare-selects > span { padding-bottom: 20px; color: var(--purple); font: 11px 'DM Mono', monospace; }
+.comparison-grid { display: grid; grid-template-columns: 145px 1fr 1fr; gap: 0 12px; }
+.comparison-labels, .comparison-column { display: grid; grid-template-rows: 55px repeat(5, minmax(74px, auto)); }
+.comparison-labels { padding-top: 36px; }
+.comparison-labels span { display: flex; align-items: center; padding-right: 10px; border-bottom: 1px solid var(--line); color: var(--soft); font-size: 10px; }
+.comparison-column { padding: 15px; border: 1px solid var(--line); border-radius: 10px; }
+.comparison-column > .eyebrow { align-self: end; margin: 0; font-size: 8px; }
+.comparison-column h3 { align-self: center; margin: 0; color: var(--ink); font: 500 17px Georgia, serif; }
+.comparison-column p { display: flex; align-items: center; margin: 0; padding: 10px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; line-height: 1.5; }
+.political-note, .source-attribution { margin: 16px 0 0; color: var(--soft); font-size: 10px; line-height: 1.5; }
+.timeline-filters { display: flex; gap: 8px; min-width: 320px; }
+.timeline-filters .modal-input { margin: 0; }
+.political-timeline { display: grid; }
+.timeline-entry { display: grid; grid-template-columns: 65px 15px 1fr; gap: 12px; min-height: 105px; }
+.timeline-year { padding-top: 2px; color: var(--purple); font: 12px 'DM Mono', monospace; text-align: right; }
+.timeline-entry > i { position: relative; width: 9px; height: 9px; margin-top: 5px; border: 2px solid var(--purple); border-radius: 50%; background: var(--surface); }
+.timeline-entry > i::after { position: absolute; top: 7px; left: 1px; width: 3px; height: 83px; content: ''; background: var(--line); }
+.timeline-entry:last-of-type > i::after { display: none; }
+.timeline-entry > div { padding-bottom: 22px; }
+.timeline-category { color: var(--soft); font: 8px 'DM Mono', monospace; letter-spacing: .6px; text-transform: uppercase; }
+.timeline-entry h3 { margin: 5px 0; color: var(--ink); font: 500 15px Georgia, serif; }
+.timeline-entry p { max-width: 760px; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.governance-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.governance-summary article { padding: 17px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); }
+.governance-summary h3 { margin: 4px 0 7px; color: var(--ink); font: 500 16px Georgia, serif; }
+.governance-summary p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.governance-table { display: grid; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.governance-table > div { display: grid; grid-template-columns: 155px 1fr 1fr; }
+.governance-table > div + div { border-top: 1px solid var(--line); }
+.governance-table strong, .governance-table span { padding: 12px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.governance-table strong { color: var(--ink); background: var(--bg); font-weight: 500; }
+.governance-table span + span { border-left: 1px solid var(--line); }
+.governance-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.governance-notes p { margin: 14px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.governance-notes strong { color: var(--ink); }
+.constitution-search { width: min(270px, 45%); margin: 0; }
+.constitution-layout { display: grid; grid-template-columns: minmax(220px, .8fr) 1.2fr; gap: 14px; }
+.constitution-list { display: grid; align-content: start; gap: 5px; max-height: 490px; overflow: auto; padding-right: 4px; }
+.constitution-list button { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid transparent; border-radius: 8px; color: var(--muted); background: transparent; text-align: left; }
+.constitution-list button:hover, .constitution-list button.selected { border-color: var(--line); background: var(--bg); }
+.constitution-list button span { color: var(--purple); font: 8px 'DM Mono', monospace; letter-spacing: .5px; }
+.constitution-list button strong { color: var(--ink); font-size: 10px; font-weight: 500; }
+.constitution-detail { min-height: 330px; padding: 22px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.constitution-detail h3, .government-detail h3 { margin: 4px 0 10px; color: var(--ink); font: 500 21px Georgia, serif; }
+.constitution-detail > p, .government-detail > p { color: var(--muted); font-size: 11px; line-height: 1.65; }
+.constitution-detail h4, .government-detail h4 { margin: 19px 0 7px; color: var(--ink); font-size: 11px; font-weight: 500; }
+.constitution-detail ul, .government-detail ul { display: grid; gap: 8px; padding-left: 17px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.constitution-detail a, .government-detail a, .source-attribution a { color: var(--purple); font-size: 10px; text-decoration: none; }
+.constitution-detail .political-note { margin-top: 24px; }
+.source-attribution { padding-top: 12px; border-top: 1px solid var(--line); }
+.government-layout { display: grid; grid-template-columns: 185px 1fr; gap: 14px; }
+.government-nav { display: grid; align-content: start; gap: 5px; }
+.government-nav button { padding: 11px 12px; border: 1px solid transparent; border-radius: 7px; color: var(--muted); background: transparent; text-align: left; font-size: 10px; }
+.government-nav button:hover, .government-nav button.selected { border-color: var(--line); color: var(--purple); background: var(--bg); }
+.government-detail { padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.government-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 10px 0 18px; }
+.government-columns section { padding: 0 13px 0 0; }
+.government-columns section + section { padding-left: 16px; border-left: 1px solid var(--line); }
+@media (max-width: 850px) {
+  .political-panel-heading { flex-direction: column; }
+  .compare-selects, .timeline-filters { width: 100%; min-width: 0; }
+  .comparison-grid { grid-template-columns: 90px 1fr 1fr; gap: 0 7px; }
+  .comparison-column { padding: 10px; }
+}
+@media (max-width: 600px) {
+  .political-panel { padding: 16px; }
+  .political-tool-tabs button { padding: 10px 8px; font-size: 9px; }
+  .compare-selects, .timeline-filters { flex-direction: column; align-items: stretch; }
+  .compare-selects > span { display: none; }
+  .comparison-grid { grid-template-columns: 1fr 1fr; }
+  .comparison-labels { display: none; }
+  .comparison-column { grid-template-rows: auto auto repeat(5, minmax(95px, auto)); }
+  .timeline-entry { grid-template-columns: 45px 12px 1fr; gap: 8px; }
+  .governance-summary, .governance-notes, .government-columns { grid-template-columns: 1fr; }
+  .governance-table > div { grid-template-columns: 100px 1fr 1fr; }
+  .governance-table strong, .governance-table span { padding: 8px 6px; font-size: 9px; }
+  .constitution-search { width: 100%; }
+  .constitution-layout, .government-layout { grid-template-columns: 1fr; }
+  .constitution-list { max-height: 220px; grid-template-columns: repeat(2, 1fr); }
+  .government-nav { grid-template-columns: repeat(2, 1fr); }
+  .government-columns section + section { padding: 0; border: 0; }
+}

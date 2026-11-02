@@ -242,6 +242,17 @@ def update_subject(item_id: int, body: dict[str, Any]):
     )
 
 
+@app.delete("/api/subjects/{item_id}", status_code=204)
+def delete_subject(item_id: int):
+    with pool.connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM annotations WHERE subject_id = %s", (item_id,))
+            cursor.execute("DELETE FROM notes WHERE subject_id = %s", (item_id,))
+            cursor.execute("DELETE FROM materials WHERE subject_id = %s", (item_id,))
+            cursor.execute("DELETE FROM documents WHERE subject_id = %s", (item_id,))
+            cursor.execute("DELETE FROM subjects WHERE id = %s", (item_id,))
+
+
 @app.get("/api/deadlines")
 def list_deadlines():
     return rows("SELECT * FROM deadlines ORDER BY id")

@@ -89,6 +89,7 @@ function App() {
   const [showCustomizer, setShowCustomizer] = useState(false)
   const [widgets, setWidgets] = useState(initialWidgets)
   const [profile, setProfile] = useState<Profile>({ name: '', term: '', year: '' })
+  const [currentTime, setCurrentTime] = useState(() => new Date())
   const [goals, setGoals] = useState<Goal[]>([])
   const [newGoal, setNewGoal] = useState('')
   const [materials, setMaterials] = useState<Material[]>([])
@@ -500,6 +501,11 @@ function App() {
   }
 
   useEffect(() => {
+    const interval = window.setInterval(() => setCurrentTime(new Date()), 60_000)
+    return () => window.clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
     Promise.all([
       fetch('/api/subjects').then((response) => response.json()),
       fetch('/api/deadlines').then((response) => response.json()),
@@ -514,6 +520,9 @@ function App() {
       setGoals(loadedGoals)
     }).catch(() => showToast('Could not connect to the API. Start it with npm run dev:server.'))
   }, [])
+
+  const greeting = currentTime.getHours() < 12 ? 'Good morning' : currentTime.getHours() < 17 ? 'Good afternoon' : currentTime.getHours() < 21 ? 'Good evening' : 'Good night'
+  const currentDate = currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()
 
   useEffect(() => {
     if (!selectedNote || modal !== 'workspace') return
@@ -565,7 +574,7 @@ function App() {
 
       <main className="main-content" onClick={() => { if (mobileNavOpen) setMobileNavOpen(false) }}>
         <header className="topbar"><div className="breadcrumb"><span>Academic space</span><b>/</b><strong>{activeNav}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search" onClick={() => setModal('search')}>⌕</button><button className="icon-button notification-button" aria-label={unreadNotificationCount ? `Notifications, ${unreadNotificationCount} unread` : 'Notifications'} onClick={() => setModal('notifications')}>♢{unreadNotificationCount > 0 && <span className="notification-dot" />}</button><button className="theme-toggle" onClick={() => { setTheme(theme === 'light' ? 'dark' : 'light'); showToast(`${theme === 'light' ? 'Dark' : 'Light'} mode enabled`) }} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>{theme === 'light' ? '☾' : '☀'}</button><button className="mini-avatar" onClick={() => setModal('profile')} aria-label="Open profile">{profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</button></div></header>
-        <section className="welcome-row"><div><p className="eyebrow">SUNDAY, NOVEMBER 1, 2026 · WEEK 10</p><h1>{profile.name ? `Good morning, ${profile.name}` : 'Build your academic dashboard'} <span>✦</span></h1><p className="intro">{profile.name ? 'Your academic picture will update as you add progress.' : 'Add your profile and first subject to get started.'}</p></div><div className="welcome-actions"><button className="customize-button" onClick={() => setShowCustomizer(!showCustomizer)}>☷ Customize</button><button className="date-button" onClick={() => setModal('week')}>This week <span>⌄</span></button></div></section>
+        <section className="welcome-row"><div><p className="eyebrow">{currentDate}</p><h1>{profile.name ? `${greeting}, ${profile.name}` : 'Build your academic dashboard'} <span>✦</span></h1><p className="intro">{profile.name ? 'Your academic picture will update as you add progress.' : 'Add your profile and first subject to get started.'}</p></div><div className="welcome-actions"><button className="customize-button" onClick={() => setShowCustomizer(!showCustomizer)}>☷ Customize</button><button className="date-button" onClick={() => setModal('week')}>This week <span>⌄</span></button></div></section>
 
         {showCustomizer && <section className="customizer"><div><strong>Dashboard widgets</strong><span>Choose what you want to see.</span></div><div className="widget-options">{(Object.keys(widgets) as Widget[]).map((widget) => <label key={widget}><input type="checkbox" checked={widgets[widget]} onChange={() => toggleWidget(widget)} />{widget}</label>)}</div></section>}
 

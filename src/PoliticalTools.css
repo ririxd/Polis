@@ -58,6 +58,19 @@
 .constitution-detail h4, .government-detail h4 { margin: 19px 0 7px; color: var(--ink); font-size: 11px; font-weight: 500; }
 .constitution-detail ul, .government-detail ul { display: grid; gap: 8px; padding-left: 17px; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .constitution-detail a, .government-detail a, .source-attribution a { color: var(--purple); font-size: 10px; text-decoration: none; }
+.constitution-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+.constitution-preview-button, .constitution-source-button { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px; border: 1px solid var(--purple); border-radius: 8px; color: var(--purple); background: var(--surface); font: 500 11px 'DM Sans', sans-serif; text-decoration: none; cursor: pointer; transition: background .15s, color .15s, box-shadow .15s; }
+.constitution-preview-button:hover { background: var(--bg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 12%, transparent); }
+.constitution-source-button { color: #fff; background: var(--purple); }
+.constitution-source-button:hover { color: #fff; background: color-mix(in srgb, var(--purple) 84%, #301b27); box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 18%, transparent); }
+.constitution-preview { margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-left: 3px solid var(--purple); border-radius: 8px; background: var(--surface); animation: constitution-preview-in .18s ease-out; }
+.constitution-preview h4 { margin: 5px 0; color: var(--ink); font: 500 15px Georgia, serif; }
+.constitution-preview p { margin: 8px 0 12px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.constitution-preview > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.constitution-preview > div span { padding: 5px 8px; border-radius: 5px; color: var(--purple); background: var(--bg); font-size: 9px; }
+.constitution-preview small { display: block; margin-top: 11px; color: var(--soft); font-size: 9px; }
+.government-detail > .constitution-source-button { color: #fff; }
+@keyframes constitution-preview-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 .constitution-detail .political-note { margin-top: 24px; }
 .source-attribution { padding-top: 12px; border-top: 1px solid var(--line); }
 .government-layout { display: grid; grid-template-columns: 185px 1fr; gap: 14px; }

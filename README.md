@@ -53,6 +53,8 @@ The local API loads Neon variables from `.env.local` and exposes `GET /api/neon/
 
 The Research assistant stores projects, source metadata, APA 7 references, and literature review notes in Postgres. Apply `server/migrations/002_research_source_metadata.sql` to an existing database before deploying the Research assistant update; fresh databases receive the same column from `server/schema.sql`.
 
+The calendar stores full event dates in Postgres. Apply `server/migrations/003_calendar_event_date.sql` to an existing database before deploying the calendar update; existing November 2026 events are retained, and fresh databases receive the new date column from `server/schema.sql`.
+
 ### Product foundation
 
 The schema also reserves first-class Postgres tables for AI recitation, debate practice,

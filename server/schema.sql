@@ -20,9 +20,13 @@ CREATE TABLE IF NOT EXISTS calendar_events (
   id BIGSERIAL PRIMARY KEY,
   title TEXT NOT NULL,
   date INTEGER NOT NULL,
+  event_date DATE,
   type TEXT NOT NULL,
   time TEXT NOT NULL
 );
+
+ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS event_date DATE;
+UPDATE calendar_events SET event_date = make_date(2026, 11, date) WHERE event_date IS NULL AND date BETWEEN 1 AND 30;
 
 CREATE TABLE IF NOT EXISTS profile (
   id INTEGER PRIMARY KEY CHECK (id = 1),

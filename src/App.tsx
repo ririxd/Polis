@@ -15,6 +15,8 @@ type Note = { id: number; subject_id: number; title: string; content: string; fo
 type Annotation = { id: number; subject_id: number; note_id: number | null; quote: string; comment: string; color: string }
 type DocumentRecord = { id: number; subject_id: number | null; name: string; file_type: string; size: number; extracted_text: string; folder: string; tags: string }
 type RecitationQuestion = { id: number; prompt: string; answer: string; answer_mode: string; evaluation: { score?: number; accuracy?: string; strengths?: string[]; improvements?: string[]; follow_up?: string } }
+type KnowledgeEntity = { id: number; entity_type: string; name: string; summary: string; details: Record<string, string> }
+type KnowledgeRelationship = { id: number; from_entity_id: number; to_entity_id: number; relationship: string; from_name: string; to_name: string }
 const activity: Activity[] = []
 
 const featureCatalog: Record<string, { eyebrow: string; title: string; description: string; features: string[] }> = {
@@ -96,6 +98,12 @@ function App() {
   const [recitationRecording, setRecitationRecording] = useState(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
+  const [knowledgeEntities, setKnowledgeEntities] = useState<KnowledgeEntity[]>([])
+  const [knowledgeRelationships, setKnowledgeRelationships] = useState<KnowledgeRelationship[]>([])
+  const [knowledgeSearch, setKnowledgeSearch] = useState('')
+  const [selectedEntity, setSelectedEntity] = useState<KnowledgeEntity | null>(null)
+  const [newEntity, setNewEntity] = useState({ name: '', entityType: 'concept', summary: '' })
+  const [newRelationship, setNewRelationship] = useState({ fromEntityId: '', toEntityId: '', relationship: 'related to' })
 
   const [toast, setToast] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -125,6 +133,7 @@ function App() {
 
   const openNav = (item: string) => {
     setActiveNav(item)
+    if (item === 'Knowledge graph') void loadKnowledgeGraph()
     showToast(`${item} view selected`)
   }
 
@@ -163,6 +172,7 @@ function App() {
       setRecitationRecording(false)
       return
     }
+
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
       showToast('Voice recording is not supported in this browser')
       return
@@ -191,6 +201,48 @@ function App() {
       setRecitationRecording(true)
     } catch {
       showToast('Microphone permission is required for voice answers')
+    }
+  }
+
+  const loadKnowledgeGraph = async (search = knowledgeSearch) => {
+    try {
+      const [entitiesResponse, relationshipsResponse] = await Promise.all([
+        fetch(`/api/knowledge/entities?search=${encodeURIComponent(search)}`),
+        fetch('/api/knowledge/relationships'),
+      ])
+      if (!entitiesResponse.ok || !relationshipsResponse.ok) throw new Error('Knowledge graph unavailable')
+      setKnowledgeEntities(await entitiesResponse.json())
+      setKnowledgeRelationships(await relationshipsResponse.json())
+    } catch {
+      showToast('Could not load knowledge graph')
+    }
+  }
+
+  const createKnowledgeEntity = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!newEntity.name.trim()) return
+    try {
+      const response = await fetch('/api/knowledge/entities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newEntity) })
+      if (!response.ok) throw new Error('Entity creation failed')
+      const entity = await response.json()
+      setKnowledgeEntities((current) => [...current, entity].sort((a, b) => a.name.localeCompare(b.name)))
+      setNewEntity({ name: '', entityType: 'concept', summary: '' })
+      showToast('Knowledge entity added')
+    } catch {
+      showToast('Could not add knowledge entity')
+    }
+  }
+
+  const createKnowledgeRelationship = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    try {
+      const response = await fetch('/api/knowledge/relationships', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newRelationship, fromEntityId: Number(newRelationship.fromEntityId), toEntityId: Number(newRelationship.toEntityId) }) })
+      if (!response.ok) throw new Error('Relationship creation failed')
+      setNewRelationship({ fromEntityId: '', toEntityId: '', relationship: 'related to' })
+      await loadKnowledgeGraph()
+      showToast('Connection added')
+    } catch {
+      showToast('Could not add connection')
     }
   }
 
@@ -414,7 +466,8 @@ function App() {
 
         {activeNav === 'Insights' && <section className="page-view"><div className="page-heading"><div><p className="eyebrow">YOUR PROGRESS</p><h1>Academic insights</h1><p className="intro">Live metrics based only on the data you add.</p></div><button className="date-button" onClick={() => showToast('Insights are calculated from your current records')}>Live data <span>⌄</span></button></div><div className="insight-grid"><article className="insight-highlight"><p className="eyebrow">AVERAGE PROGRESS</p><strong>{averageProgress}%</strong><span>{subjectItems.length ? 'Across your subjects' : 'Add subjects to track progress'}</span><div className="insight-line green"><i style={{ width: `${averageProgress}%` }} /></div></article><article className="insight-chart"><p className="eyebrow">ACADEMIC RECORDS</p><h2>{subjectItems.length + deadlineItems.length + calendarEvents.length} items tracked</h2><div className="empty-state">{subjectItems.length || deadlineItems.length || calendarEvents.length ? 'Your overview updates automatically when records change.' : 'Add a subject, deadline, or event to start seeing insights.'}</div></article></div><div className="insight-note"><span>✦</span><div><strong>{subjectItems.length ? 'Keep building your academic picture.' : 'Your insights are ready when you are.'}</strong><p>All metrics on this page are derived from your current subjects, progress, deadlines, and calendar events. No placeholder data is shown.</p></div></div></section>}
         {activeNav === 'AI recitation' && <section className="page-view recitation-page"><div className="page-heading"><div><p className="eyebrow">LEARNING LAB</p><h1>AI oral recitation</h1><p className="intro">Practice one question at a time and receive feedback on conceptual accuracy.</p></div></div>{!recitationQuestion && <form className="recitation-start" onSubmit={startRecitation}><label>What should you be tested on?<input className="modal-input" required placeholder="e.g. Marxist theory and political economy" value={recitationTitle} onChange={(event) => setRecitationTitle(event.target.value)} /></label><button className="primary-button" type="submit">Start recitation</button><p>OpenAI generates the question and evaluates your answer securely through the API.</p></form>}{recitationQuestion && <article className="recitation-card"><p className="eyebrow">QUESTION</p><h2>{recitationQuestion.prompt}</h2><form onSubmit={submitRecitationAnswer}><textarea className="recitation-answer" required placeholder="Explain your answer in your own words..." value={recitationAnswer} onChange={(event) => setRecitationAnswer(event.target.value)} /><div className="recitation-actions"><button className="primary-button" type="submit">Submit answer</button><button className={recitationRecording ? 'record-button recording' : 'record-button'} type="button" onClick={toggleRecitationRecording}>{recitationRecording ? 'Stop recording' : 'Record voice answer'}</button></div></form>{recitationEvaluation && <div className="recitation-feedback"><div className="score-badge">{recitationEvaluation.score ?? '—'}<span>/100</span></div><div><p><strong>Conceptual accuracy:</strong> {recitationEvaluation.accuracy}</p><p><strong>Strengths:</strong> {recitationEvaluation.strengths?.join(' ') || 'No strengths recorded.'}</p><p><strong>Improve next:</strong> {recitationEvaluation.improvements?.join(' ') || 'No improvement notes recorded.'}</p>{recitationEvaluation.follow_up && <p><strong>Follow-up:</strong> {recitationEvaluation.follow_up}</p>}</div></div>}</article>}</section>}
-        {activeNav !== 'AI recitation' && featureCatalog[activeNav] && <section className="page-view feature-hub"><div className="page-heading"><div><p className="eyebrow">{featureCatalog[activeNav].eyebrow}</p><h1>{featureCatalog[activeNav].title}</h1><p className="intro">{featureCatalog[activeNav].description}</p></div><button className="primary-button" onClick={() => showToast('This workspace is ready for the next implementation milestone')}>Explore workspace</button></div><div className="feature-grid">{featureCatalog[activeNav].features.map((feature) => <article className="feature-card" key={feature}><span>✦</span><h2>{feature}</h2><p>Foundation ready for structured data, progress tracking, and future AI-assisted workflows.</p></article>)}</div></section>}
+        {activeNav === 'Knowledge graph' && <section className="page-view knowledge-page"><div className="page-heading"><div><p className="eyebrow">POLITICAL KNOWLEDGE</p><h1>Knowledge graph</h1><p className="intro">Search concepts and connect thinkers, theories, ideologies, events, and institutions.</p></div></div><div className="knowledge-toolbar"><input className="modal-input" placeholder="Search entities..." value={knowledgeSearch} onChange={(event) => { setKnowledgeSearch(event.target.value); void loadKnowledgeGraph(event.target.value) }} /><span>{knowledgeEntities.length} entities · {knowledgeRelationships.length} connections</span></div><div className="knowledge-layout"><div><form className="knowledge-form" onSubmit={createKnowledgeEntity}><h2>Add entity</h2><input className="modal-input" required placeholder="Name" value={newEntity.name} onChange={(event) => setNewEntity({ ...newEntity, name: event.target.value })} /><select className="modal-input" value={newEntity.entityType} onChange={(event) => setNewEntity({ ...newEntity, entityType: event.target.value })}>{['thinker', 'theory', 'ideology', 'concept', 'event', 'institution'].map((type) => <option key={type}>{type}</option>)}</select><textarea className="modal-input knowledge-summary" placeholder="Short summary" value={newEntity.summary} onChange={(event) => setNewEntity({ ...newEntity, summary: event.target.value })} /><button className="primary-button" type="submit">Add to graph</button></form><form className="knowledge-form" onSubmit={createKnowledgeRelationship}><h2>Connect entities</h2><select className="modal-input" required value={newRelationship.fromEntityId} onChange={(event) => setNewRelationship({ ...newRelationship, fromEntityId: event.target.value })}><option value="">From entity</option>{knowledgeEntities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}</select><input className="modal-input" required placeholder="Relationship (e.g. developed)" value={newRelationship.relationship} onChange={(event) => setNewRelationship({ ...newRelationship, relationship: event.target.value })} /><select className="modal-input" required value={newRelationship.toEntityId} onChange={(event) => setNewRelationship({ ...newRelationship, toEntityId: event.target.value })}><option value="">To entity</option>{knowledgeEntities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}</select><button className="primary-button" type="submit">Create connection</button></form></div><div className="knowledge-results"><div className="knowledge-entity-grid">{knowledgeEntities.map((entity) => <button className={selectedEntity?.id === entity.id ? 'knowledge-entity selected' : 'knowledge-entity'} key={entity.id} onClick={() => setSelectedEntity(entity)}><span>{entity.entity_type}</span><strong>{entity.name}</strong><p>{entity.summary || 'No summary yet.'}</p></button>)}</div><div className="knowledge-connections"><h2>Connections</h2>{knowledgeRelationships.length ? knowledgeRelationships.map((connection) => <p key={connection.id}><strong>{connection.from_name}</strong> <span>{connection.relationship}</span> <strong>{connection.to_name}</strong></p>) : <div className="empty-state">Add entities and connect them to build your graph.</div>}</div>{selectedEntity && <div className="knowledge-profile"><p className="eyebrow">{selectedEntity.entity_type}</p><h2>{selectedEntity.name}</h2><p>{selectedEntity.summary || 'Add a summary to describe this profile.'}</p></div>}</div></div></section>}
+        {activeNav !== 'AI recitation' && activeNav !== 'Knowledge graph' && featureCatalog[activeNav] && <section className="page-view feature-hub"><div className="page-heading"><div><p className="eyebrow">{featureCatalog[activeNav].eyebrow}</p><h1>{featureCatalog[activeNav].title}</h1><p className="intro">{featureCatalog[activeNav].description}</p></div><button className="primary-button" onClick={() => showToast('This workspace is ready for the next implementation milestone')}>Explore workspace</button></div><div className="feature-grid">{featureCatalog[activeNav].features.map((feature) => <article className="feature-card" key={feature}><span>✦</span><h2>{feature}</h2><p>Foundation ready for structured data, progress tracking, and future AI-assisted workflows.</p></article>)}</div></section>}
         <footer><span>Built for a life of intention.</span><span>Need a hand? <button className="footer-link" onClick={() => showToast('Guide coming soon — your dashboard is ready to explore.')}>Visit the guide</button></span></footer>
 
         {modal && <div className="modal-backdrop" onClick={() => setModal(null)}><section className="modal" onClick={(event) => event.stopPropagation()}>

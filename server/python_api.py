@@ -385,6 +385,59 @@ async def transcribe_recitation(file: UploadFile = File(...)):
         raise HTTPException(502, "Could not transcribe the audio answer") from error
 
 
+@app.get("/api/knowledge/entities")
+def list_knowledge_entities(search: str = ""):
+    pattern = f"%{search.strip()}%"
+    return rows(
+        """SELECT id, entity_type, name, summary, details, created_at
+           FROM knowledge_entities
+           WHERE name ILIKE %s OR summary ILIKE %s
+           ORDER BY name""",
+        (pattern, pattern),
+    )
+
+
+@app.post("/api/knowledge/entities", status_code=201)
+def create_knowledge_entity(body: dict[str, Any]):
+    entity_type = required_text(body.get("entityType"), "entityType")
+    if entity_type not in {"thinker", "theory", "ideology", "concept", "event", "institution"}:
+        raise HTTPException(400, "Invalid knowledge entity type")
+    name = required_text(body.get("name"), "name")
+    return one(
+        """INSERT INTO knowledge_entities (entity_type, name, summary, details)
+           VALUES (%s, %s, %s, %s) RETURNING id, entity_type, name, summary, details, created_at""",
+        (entity_type, name, body.get("summary", ""), json.dumps(body.get("details", {}))),
+    )
+
+
+@app.get("/api/knowledge/relationships")
+def list_knowledge_relationships():
+    return rows(
+        """SELECT r.id, r.relationship, r.from_entity_id, r.to_entity_id,
+                  f.name AS from_name, t.name AS to_name
+           FROM knowledge_relationships r
+           JOIN knowledge_entities f ON f.id = r.from_entity_id
+           JOIN knowledge_entities t ON t.id = r.to_entity_id
+           ORDER BY r.id DESC"""
+    )
+
+
+@app.post("/api/knowledge/relationships", status_code=201)
+def create_knowledge_relationship(body: dict[str, Any]):
+    from_id = body.get("fromEntityId")
+    to_id = body.get("toEntityId")
+    relationship = required_text(body.get("relationship"), "relationship")
+    if not from_id or not to_id or from_id == to_id:
+        raise HTTPException(400, "Two different entities are required")
+    return one(
+        """INSERT INTO knowledge_relationships (from_entity_id, to_entity_id, relationship)
+           VALUES (%s, %s, %s)
+           ON CONFLICT (from_entity_id, to_entity_id, relationship) DO UPDATE SET relationship = EXCLUDED.relationship
+           RETURNING id, from_entity_id, to_entity_id, relationship""",
+        (from_id, to_id, relationship),
+    )
+
+
 @app.get("/api/deadlines")
 def list_deadlines():
     return rows("SELECT * FROM deadlines ORDER BY id")

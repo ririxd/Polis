@@ -15,6 +15,8 @@ npm run dev
 
 The FastAPI service runs on `http://localhost:8000`, applies `server/schema.sql` to Neon Postgres on startup, and uses the pooled `DATABASE_URL` for requests. The Vite development server proxies `/api` to it.
 
+Start both commands in separate terminals. If the dashboard shows an API connection error, confirm that `npm run dev:server` is still running and that `http://localhost:8000/api/health` returns a successful response.
+
 The previous Express/SQLite implementation remains in `server/index.cjs` for reference, but is no longer the default `dev:server` command.
 
 ### Deploying on Vercel

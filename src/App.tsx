@@ -205,7 +205,7 @@ function App() {
       setCalendarEvents(loadedEvents)
       setProfile(loadedProfile)
       setGoals(loadedGoals)
-    }).catch(() => showToast('Could not connect to the local database'))
+    }).catch(() => showToast('Could not connect to the API. Start it with npm run dev:server.'))
   }, [])
 
   useEffect(() => {

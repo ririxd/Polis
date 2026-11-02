@@ -1,6 +1,4 @@
 .political-tools-page { padding-bottom: 36px; }
-.philippine-governance-page > .page-heading:not(.philippines-heading) { display: none; }
-.philippine-governance-page .philippines-heading { margin-bottom: 16px; }
 .election-study-grid, .rights-study-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
 .election-study-grid article, .rights-study-grid article { padding: 17px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); }
 .election-study-grid article h3, .rights-study-grid article h3, .voter-basics h3 { margin: 6px 0 8px; color: var(--ink); font: 500 16px Georgia, serif; }

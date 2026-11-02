@@ -303,6 +303,40 @@ def list_recitations():
     )
 
 
+@app.post("/api/chat")
+def chat_with_tutor(body: dict[str, Any]):
+    raw_messages = body.get("messages")
+    if not isinstance(raw_messages, list) or not raw_messages or len(raw_messages) > 20:
+        raise HTTPException(400, "Send between 1 and 20 chat messages")
+
+    messages: list[dict[str, str]] = []
+    for item in raw_messages:
+        if not isinstance(item, dict) or item.get("role") not in {"user", "assistant"}:
+            raise HTTPException(400, "Each message needs a user or assistant role")
+        content = required_text(item.get("content"), "message content")
+        if len(content) > 4000:
+            raise HTTPException(400, "Messages must be 4000 characters or fewer")
+        messages.append({"role": item["role"], "content": content})
+
+    client, model = ai_client()
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are Polis Study Assistant, a supportive academic tutor for a political science student. Help with concepts, study plans, writing feedback, and using the Polis app. Explain ideas clearly, ask useful follow-up questions, and be honest when uncertain. Do not invent citations or claim to have read materials the student has not shared. Keep answers focused and use plain language."},
+                *messages,
+            ],
+        )
+        answer = response.choices[0].message.content
+        if not answer:
+            raise HTTPException(502, "The AI returned an empty response")
+        return {"answer": answer}
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(502, "Could not get a response from the study assistant") from error
+
+
 @app.post("/api/recitations", status_code=201)
 def create_recitation(body: dict[str, Any]):
     title = required_text(body.get("title"), "title")

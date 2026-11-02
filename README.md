@@ -48,6 +48,10 @@ The local API loads Neon variables from `.env.local` and exposes `GET /api/neon/
 - `GET/POST/PATCH /api/notes`
 - `GET/POST /api/annotations`
 - `GET/POST /api/documents`
+- `GET/POST/PATCH/DELETE /api/research/projects`
+- `GET/POST/PATCH/DELETE /api/research/sources`
+
+The Research assistant stores projects, source metadata, APA 7 references, and literature review notes in Postgres. Apply `server/migrations/002_research_source_metadata.sql` to an existing database before deploying the Research assistant update; fresh databases receive the same column from `server/schema.sql`.
 
 ### Product foundation
 

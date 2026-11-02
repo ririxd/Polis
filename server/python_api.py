@@ -303,6 +303,99 @@ def list_recitations():
     )
 
 
+@app.get("/api/research/projects")
+def list_research_projects():
+    return rows("SELECT * FROM research_projects ORDER BY created_at DESC, id DESC")
+
+
+@app.post("/api/research/projects", status_code=201)
+def create_research_project(body: dict[str, Any]):
+    title = required_text(body.get("title"), "title")
+    outline = body.get("outline", [])
+    if not isinstance(outline, list):
+        raise HTTPException(400, "outline must be a list")
+    return one(
+        """INSERT INTO research_projects (title, research_question, thesis, outline)
+           VALUES (%s, %s, %s, %s::jsonb) RETURNING *""",
+        (title, str(body.get("research_question", ""))[:2000], str(body.get("thesis", ""))[:4000], json.dumps(outline)),
+    )
+
+
+@app.patch("/api/research/projects/{project_id}")
+def update_research_project(project_id: int, body: dict[str, Any]):
+    if "outline" in body and not isinstance(body["outline"], list):
+        raise HTTPException(400, "outline must be a list")
+    title = required_text(body["title"], "title") if "title" in body else None
+    outline = json.dumps(body["outline"]) if "outline" in body else None
+    project = one(
+        """UPDATE research_projects SET title = COALESCE(%s, title),
+           research_question = COALESCE(%s, research_question), thesis = COALESCE(%s, thesis),
+           outline = COALESCE(%s::jsonb, outline) WHERE id = %s RETURNING *""",
+        (title, body.get("research_question"), body.get("thesis"), outline, project_id),
+    )
+    if not project:
+        raise HTTPException(404, "Research project not found")
+    return project
+
+
+@app.delete("/api/research/projects/{project_id}", status_code=204)
+def delete_research_project(project_id: int):
+    with pool.connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM research_projects WHERE id = %s", (project_id,))
+            if cursor.rowcount == 0:
+                raise HTTPException(404, "Research project not found")
+
+
+@app.get("/api/research/sources")
+def list_research_sources(project_id: int | None = Query(default=None, alias="projectId")):
+    if project_id is None:
+        return rows("SELECT * FROM research_sources ORDER BY created_at DESC, id DESC")
+    return rows("SELECT * FROM research_sources WHERE project_id = %s ORDER BY created_at DESC, id DESC", (project_id,))
+
+
+@app.post("/api/research/sources", status_code=201)
+def create_research_source(body: dict[str, Any]):
+    title = required_text(body.get("title"), "title")
+    metadata = body.get("metadata", {})
+    if not isinstance(metadata, dict):
+        raise HTTPException(400, "metadata must be an object")
+    return one(
+        """INSERT INTO research_sources (project_id, title, url, doi, citation, notes, metadata)
+           VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb) RETURNING *""",
+        (body.get("project_id"), title, str(body.get("url", ""))[:2000], str(body.get("doi", ""))[:300],
+         str(body.get("citation", ""))[:4000], str(body.get("notes", ""))[:8000], json.dumps(metadata)),
+    )
+
+
+@app.patch("/api/research/sources/{source_id}")
+def update_research_source(source_id: int, body: dict[str, Any]):
+    metadata = body.get("metadata")
+    if metadata is not None and not isinstance(metadata, dict):
+        raise HTTPException(400, "metadata must be an object")
+    title = required_text(body["title"], "title") if "title" in body else None
+    saved = one(
+        """UPDATE research_sources SET project_id = COALESCE(%s, project_id),
+           title = COALESCE(%s, title), url = COALESCE(%s, url), doi = COALESCE(%s, doi),
+           citation = COALESCE(%s, citation), notes = COALESCE(%s, notes),
+           metadata = COALESCE(%s::jsonb, metadata) WHERE id = %s RETURNING *""",
+        (body.get("project_id"), title, body.get("url"), body.get("doi"), body.get("citation"),
+         body.get("notes"), json.dumps(metadata) if metadata is not None else None, source_id),
+    )
+    if not saved:
+        raise HTTPException(404, "Research source not found")
+    return saved
+
+
+@app.delete("/api/research/sources/{source_id}", status_code=204)
+def delete_research_source(source_id: int):
+    with pool.connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM research_sources WHERE id = %s", (source_id,))
+            if cursor.rowcount == 0:
+                raise HTTPException(404, "Research source not found")
+
+
 @app.post("/api/chat")
 def chat_with_tutor(body: dict[str, Any]):
     raw_messages = body.get("messages")

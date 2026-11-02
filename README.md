@@ -17,6 +17,16 @@ The FastAPI service runs on `http://localhost:8000`, applies `server/schema.sql`
 
 The previous Express/SQLite implementation remains in `server/index.cjs` for reference, but is no longer the default `dev:server` command.
 
+### Deploying on Vercel
+
+Vercel serves the Vite build from `dist` and the FastAPI app from `api/index.py`. Add these project environment variables in Vercel:
+
+- `DATABASE_URL`: Neon pooled connection string for web requests.
+- `NEON_REALTIME_URL`: the public Realtime URL, if the client uses Realtime.
+- `POLIS_AUTO_MIGRATE`: set to `false` for deployments; the Neon schema is in `server/schema.sql`.
+
+Apply schema changes separately with `DATABASE_URL_UNPOOLED` and the direct migration workflow. Do not use the unpooled URL for normal request traffic.
+
 ## Neon services
 
 The project is linked to the `production` branch in Neon. `neon.ts` provisions the `assets` Object Storage bucket, the `health` Neon Function, and Realtime. Run `neon deploy --env .env.local` after changing the infrastructure config.

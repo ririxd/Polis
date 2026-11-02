@@ -54,7 +54,8 @@ def required_text(value: Any, field: str) -> str:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global pool
-    initialize_schema()
+    if os.getenv("POLIS_AUTO_MIGRATE", "").lower() == "true":
+        initialize_schema()
     pool = ConnectionPool(DATABASE_URL, kwargs={"row_factory": dict_row}, min_size=1, max_size=5, open=True)
     yield
     pool.close()

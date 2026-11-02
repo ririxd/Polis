@@ -8,6 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+polis.db
+polis.db-shm
+polis.db-wal
 dist
 dist-ssr
 *.local
@@ -22,3 +25,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.neon

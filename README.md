@@ -1,4 +1,39 @@
-# React + TypeScript + Vite
+# Polis
+
+Personal academic dashboard built with React, TypeScript, Vite, Express, and SQLite.
+
+## Local development
+
+Install dependencies, then run the Python API and frontend in separate terminals:
+
+```bash
+npm install
+python -m pip install -r requirements.txt
+npm run dev:server
+npm run dev
+```
+
+The FastAPI service runs on `http://localhost:8000`, applies `server/schema.sql` to Neon Postgres on startup, and uses the pooled `DATABASE_URL` for requests. The Vite development server proxies `/api` to it.
+
+The previous Express/SQLite implementation remains in `server/index.cjs` for reference, but is no longer the default `dev:server` command.
+
+## Neon services
+
+The project is linked to the `production` branch in Neon. `neon.ts` provisions the `assets` Object Storage bucket, the `health` Neon Function, and Realtime. Run `neon deploy --env .env.local` after changing the infrastructure config.
+
+The local API loads Neon variables from `.env.local` and exposes `GET /api/neon/health`. That endpoint proxies the deployed Function, which verifies Postgres connectivity, writes and deletes a temporary Object Storage object, and confirms the Realtime URL is configured.
+
+## Available API resources
+
+- `GET/POST /api/subjects`
+- `GET/POST /api/deadlines`
+- `GET/POST /api/calendar-events`
+- `GET/POST /api/materials`
+- `GET/POST/PATCH /api/notes`
+- `GET/POST /api/annotations`
+- `GET/POST /api/documents`
+
+Each subject opens an Academic Workspace with Markdown/rich-text notes, autosave on blur, folders/tags, favorites-ready records, material links, local document metadata, TXT/Markdown text extraction, annotations, workspace search, and browser print/PDF export.
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 

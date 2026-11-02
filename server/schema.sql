@@ -1,0 +1,89 @@
+CREATE TABLE IF NOT EXISTS subjects (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  code TEXT NOT NULL,
+  grade TEXT NOT NULL,
+  progress INTEGER NOT NULL DEFAULT 0,
+  color TEXT NOT NULL,
+  next TEXT NOT NULL DEFAULT 'Set your next milestone'
+);
+
+CREATE TABLE IF NOT EXISTS deadlines (
+  id BIGSERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  date TEXT NOT NULL,
+  tone TEXT NOT NULL DEFAULT 'normal'
+);
+
+CREATE TABLE IF NOT EXISTS calendar_events (
+  id BIGSERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  date INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  time TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS profile (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  name TEXT NOT NULL DEFAULT '',
+  term TEXT NOT NULL DEFAULT '',
+  year TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS goals (
+  id BIGSERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  completed INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS materials (
+  id BIGSERIAL PRIMARY KEY,
+  subject_id BIGINT NOT NULL,
+  title TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  url TEXT NOT NULL DEFAULT '',
+  folder TEXT NOT NULL DEFAULT '',
+  tags TEXT NOT NULL DEFAULT '',
+  favorite INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS notes (
+  id BIGSERIAL PRIMARY KEY,
+  subject_id BIGINT NOT NULL,
+  title TEXT NOT NULL DEFAULT 'Untitled note',
+  content TEXT NOT NULL DEFAULT '',
+  format TEXT NOT NULL DEFAULT 'markdown',
+  folder TEXT NOT NULL DEFAULT '',
+  tags TEXT NOT NULL DEFAULT '',
+  favorite INTEGER NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS annotations (
+  id BIGSERIAL PRIMARY KEY,
+  subject_id BIGINT NOT NULL,
+  note_id BIGINT,
+  quote TEXT NOT NULL,
+  comment TEXT NOT NULL DEFAULT '',
+  color TEXT NOT NULL DEFAULT 'yellow',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS documents (
+  id BIGSERIAL PRIMARY KEY,
+  subject_id BIGINT,
+  name TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  size BIGINT NOT NULL DEFAULT 0,
+  extracted_text TEXT NOT NULL DEFAULT '',
+  folder TEXT NOT NULL DEFAULT '',
+  tags TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS materials_subject_idx ON materials(subject_id);
+CREATE INDEX IF NOT EXISTS notes_subject_idx ON notes(subject_id);
+CREATE INDEX IF NOT EXISTS annotations_subject_idx ON annotations(subject_id);
+CREATE INDEX IF NOT EXISTS documents_subject_idx ON documents(subject_id);

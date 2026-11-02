@@ -21,7 +21,19 @@ type KnowledgeRelationship = { id: number; from_entity_id: number; to_entity_id:
 type DebateTurn = { id: number; speaker: 'user' | 'ai'; content: string; evaluation: { score?: number; strengths?: string[]; improvements?: string[]; fallacies?: string[]; feedback?: string } }
 type DebateSession = { id: number; topic: string; position: string; summary?: string; score?: number | null; turns: DebateTurn[]; report?: { score?: number; summary?: string; strengths?: string[]; improvements?: string[]; fallacies?: string[] } }
 type DebateHistoryItem = { id: number; topic: string; position: string; summary: string; score: number | null; report?: DebateSession['report']; created_at: string }
+type NotificationItem = { id: string; title: string; detail: string; date: Date; label: string; calendarDate?: number }
 const activity: Activity[] = []
+const notificationStorageKey = 'polis.read-notification-ids'
+
+function loadReadNotifications(): string[] {
+  try {
+    const saved = window.localStorage.getItem(notificationStorageKey)
+    const parsed: unknown = saved ? JSON.parse(saved) : []
+    return Array.isArray(parsed) && parsed.every((item) => typeof item === 'string') ? parsed : []
+  } catch {
+    return []
+  }
+}
 
 const featureCatalog: Record<string, { eyebrow: string; title: string; description: string; features: string[] }> = {
   'AI recitation': {
@@ -121,12 +133,50 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [deadlineItems, setDeadlineItems] = useState<Deadline[]>([])
   const [newDeadline, setNewDeadline] = useState({ title: '', subject: '', date: '' })
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(loadReadNotifications)
+  const notificationItems = useMemo<NotificationItem[]>(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const items: NotificationItem[] = []
+    deadlineItems.forEach((deadline) => {
+      const [year, month, day] = deadline.date.split('-').map(Number)
+      const dueDate = year && month && day ? new Date(year, month - 1, day) : new Date(deadline.date)
+      if (Number.isNaN(dueDate.getTime())) return
+      dueDate.setHours(0, 0, 0, 0)
+      const days = Math.round((dueDate.getTime() - today.getTime()) / 86_400_000)
+      if (days < -7 || days > 14) return
+      const label = days < 0 ? `Overdue by ${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'}` : days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : `Due in ${days} days`
+      items.push({ id: `deadline:${deadline.title}:${deadline.subject}:${deadline.date}`, title: deadline.title, detail: `${deadline.subject} · ${label}`, date: dueDate, label })
+    })
+    calendarEvents.forEach((event) => {
+      const dueDate = new Date(2026, 10, event.date)
+      const days = Math.round((dueDate.getTime() - today.getTime()) / 86_400_000)
+      if (days < 0 || days > 14) return
+      const label = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`
+      items.push({ id: `event:${event.title}:${event.date}:${event.time}`, title: event.title, detail: `${event.type} · ${event.time} · ${label}`, date: dueDate, label, calendarDate: event.date })
+    })
+    return items.sort((a, b) => a.date.getTime() - b.date.getTime())
+  }, [deadlineItems, calendarEvents])
+  const unreadNotificationCount = notificationItems.filter((item) => !readNotificationIds.includes(item.id)).length
   const averageProgress = subjectItems.length ? Math.round(subjectItems.reduce((sum, subject) => sum + subject.progress, 0) / subjectItems.length) : 0
   const completedGoalCount = goals.filter((goal) => Boolean(goal.completed)).length
   const timerMinutes = Math.floor(timerSeconds / 60).toString().padStart(2, '0')
   const timerRemainder = (timerSeconds % 60).toString().padStart(2, '0')
 
   const visibleWidgetCount = useMemo(() => Object.values(widgets).filter(Boolean).length, [widgets])
+
+  const markNotificationsRead = (ids: string[]) => {
+    const updated = [...new Set([...readNotificationIds, ...ids])]
+    setReadNotificationIds(updated)
+    try { window.localStorage.setItem(notificationStorageKey, JSON.stringify(updated)) } catch { showToast('Could not save notification read status') }
+  }
+
+  const openNotification = (item: NotificationItem) => {
+    markNotificationsRead([item.id])
+    if (item.calendarDate) setSelectedDate(item.calendarDate)
+    setActiveNav('Calendar')
+    setModal(null)
+  }
 
   const toggleWidget = (widget: Widget) => {
     if (widgets[widget] && visibleWidgetCount === 1) return
@@ -512,7 +562,7 @@ function App() {
       </aside>
 
       <main className="main-content">
-        <header className="topbar"><div className="breadcrumb"><span>Academic space</span><b>/</b><strong>{activeNav}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search" onClick={() => setModal('search')}>⌕</button><button className="icon-button" aria-label="Notifications" onClick={() => setModal('notifications')}>♢<span className="notification-dot" /></button><button className="theme-toggle" onClick={() => { setTheme(theme === 'light' ? 'dark' : 'light'); showToast(`${theme === 'light' ? 'Dark' : 'Light'} mode enabled`) }} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>{theme === 'light' ? '☾' : '☀'}</button><button className="mini-avatar" onClick={() => setModal('profile')} aria-label="Open profile">{profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</button></div></header>
+        <header className="topbar"><div className="breadcrumb"><span>Academic space</span><b>/</b><strong>{activeNav}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search" onClick={() => setModal('search')}>⌕</button><button className="icon-button notification-button" aria-label={unreadNotificationCount ? `Notifications, ${unreadNotificationCount} unread` : 'Notifications'} onClick={() => setModal('notifications')}>♢{unreadNotificationCount > 0 && <span className="notification-dot" />}</button><button className="theme-toggle" onClick={() => { setTheme(theme === 'light' ? 'dark' : 'light'); showToast(`${theme === 'light' ? 'Dark' : 'Light'} mode enabled`) }} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>{theme === 'light' ? '☾' : '☀'}</button><button className="mini-avatar" onClick={() => setModal('profile')} aria-label="Open profile">{profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</button></div></header>
         <section className="welcome-row"><div><p className="eyebrow">SUNDAY, NOVEMBER 1, 2026 · WEEK 10</p><h1>{profile.name ? `Good morning, ${profile.name}` : 'Build your academic dashboard'} <span>✦</span></h1><p className="intro">{profile.name ? 'Your academic picture will update as you add progress.' : 'Add your profile and first subject to get started.'}</p></div><div className="welcome-actions"><button className="customize-button" onClick={() => setShowCustomizer(!showCustomizer)}>☷ Customize</button><button className="date-button" onClick={() => setModal('week')}>This week <span>⌄</span></button></div></section>
 
         {showCustomizer && <section className="customizer"><div><strong>Dashboard widgets</strong><span>Choose what you want to see.</span></div><div className="widget-options">{(Object.keys(widgets) as Widget[]).map((widget) => <label key={widget}><input type="checkbox" checked={widgets[widget]} onChange={() => toggleWidget(widget)} />{widget}</label>)}</div></section>}
@@ -550,7 +600,7 @@ function App() {
         {modal && <div className="modal-backdrop" onClick={() => setModal(null)}><section className="modal" onClick={(event) => event.stopPropagation()}>
           <button className="modal-close" onClick={() => setModal(null)} aria-label="Close dialog">×</button>
           {modal === 'search' && <><p className="eyebrow">FIND ANYTHING</p><h2>Search your academic space</h2><input className="modal-input" autoFocus placeholder="Search courses, deadlines, activity..." value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} /><div className="search-results">{searchQuery && (searchResults.length ? searchResults.map((result) => <button key={result} onClick={() => { setModal(null); showToast(`Opened ${result}`) }}>{result}<span>→</span></button>) : <p>No matching items found.</p>)}</div></>}
-          {modal === 'notifications' && <><p className="eyebrow">UPDATES</p><h2>Notifications</h2><div className="modal-list"><div><strong>Calculus problem set is due tomorrow.</strong><span>Plan a little time today to finish it.</span></div><div><strong>Your design draft was uploaded.</strong><span>Everything is ready for the next critique.</span></div></div><button className="modal-primary" onClick={() => { setModal(null); showToast('Notifications marked as read') }}>Mark all as read</button></>}
+          {modal === 'notifications' && <><p className="eyebrow">UPDATES · {unreadNotificationCount} UNREAD</p><h2>Notifications</h2>{notificationItems.length ? <div className="notification-list">{notificationItems.map((item) => { const isRead = readNotificationIds.includes(item.id); return <button className={isRead ? 'notification-item read' : 'notification-item unread'} key={item.id} onClick={() => openNotification(item)}><span className="notification-copy"><strong>{item.title}</strong><span>{item.detail}</span></span><span className="notification-status">{isRead ? 'Read' : item.label}</span></button> })}</div> : <div className="notification-empty"><span>✓</span><strong>You’re all caught up</strong><p>Deadlines and calendar events due in the next two weeks will show up here.</p></div>}<button className="modal-primary" disabled={!unreadNotificationCount} onClick={() => markNotificationsRead(notificationItems.map((item) => item.id))}>{unreadNotificationCount ? 'Mark all as read' : 'All caught up'}</button></>}
           {modal === 'settings' && <><p className="eyebrow">PERSONALIZE</p><h2>Settings</h2><div className="settings-list"><label>Theme <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>{theme === 'light' ? 'Light' : 'Dark'} ↔</button></label><label>Weekly digest <input type="checkbox" defaultChecked /></label><label>Deadline reminders <input type="checkbox" defaultChecked /></label></div><button className="modal-primary" onClick={() => { setModal(null); showToast('Settings saved') }}>Done</button></>}
           {modal === 'profile' && <form onSubmit={saveProfile}><p className="eyebrow">YOUR ACCOUNT</p><h2>Edit profile</h2><input className="modal-input" required placeholder="Your name" value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} /><input className="modal-input" placeholder="Term (e.g. Fall 2026)" value={profile.term} onChange={(event) => setProfile({ ...profile, term: event.target.value })} /><input className="modal-input" placeholder="Year or program" value={profile.year} onChange={(event) => setProfile({ ...profile, year: event.target.value })} /><button className="modal-primary" type="submit">Save profile</button></form>}
           {modal === 'routine' && <><p className="eyebrow">PERSONALIZE</p><h2>Customize routine</h2><form onSubmit={addGoal} className="inline-form"><input className="modal-input" required placeholder="Add a study goal" value={newGoal} onChange={(event) => setNewGoal(event.target.value)} /><button className="modal-primary" type="submit">Add goal</button></form><div className="modal-list">{goals.map((goal) => <div key={goal.id}><strong>{goal.title}<button className="delete-goal" onClick={() => { fetch(`/api/goals/${goal.id}`, { method: 'DELETE' }); setGoals((current) => current.filter((item) => item.id !== goal.id)) }}>Remove</button></strong><span>{goal.completed ? 'Completed' : 'Not completed'}</span></div>)}</div></>}

@@ -448,13 +448,14 @@ def generate_study_quiz(body: dict[str, Any]):
         generated = ai_json(f"""Create exactly {count} {question_type} questions at {difficulty} difficulty from the supplied study material.
 Every question must have prompt, answer, explanation, concept (a concise topic for performance analysis), and {shapes[question_type]}.
 Questions must be answerable from the material and must not repeat.
+Infer a concise quiz topic from the material.
 Material:
 {content}
-Return JSON with questions as an array of objects.""")
+Return JSON with topic (short inferred topic) and questions as an array of objects.""")
         questions = generated.get("questions")
         if not isinstance(questions, list) or len(questions) < 1:
             raise HTTPException(502, "The AI did not return quiz questions")
-        return {"topic": str(body.get("topic", "Study quiz"))[:300], "questionType": question_type, "difficulty": difficulty, "questions": questions[:count]}
+        return {"topic": str(body.get("topic") or generated.get("topic") or "Study quiz")[:300], "questionType": question_type, "difficulty": difficulty, "questions": questions[:count]}
     except Exception as error:
         if isinstance(error, HTTPException):
             raise

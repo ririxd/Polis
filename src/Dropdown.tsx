@@ -57,7 +57,7 @@ export default function Dropdown({ options, value, onChange, className = '', ari
         onKeyDown={handleKeyDown}
       >
         <span>{selected?.label || 'Select option'}</span>
-        <span className="dropdown-chevron" aria-hidden="true" />
+        <span className="dropdown-chevron" aria-hidden="true">⌄</span>
       </button>
       <div className="dropdown-menu" role="listbox" aria-hidden={!open}>
         {options.map((option) => (

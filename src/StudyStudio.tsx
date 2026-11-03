@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import './StudyStudio.css'
 
-type StudyTool = 'simplify' | 'writing' | 'summarize' | 'concepts' | 'definitions' | 'study-guide' | 'reviewer' | 'source-answer'
 type QuestionType = 'multiple-choice' | 'true-false' | 'identification' | 'enumeration' | 'situational' | 'essay'
 type StudyCard = { id: number; deck_id: number; front: string; back: string }
 type Deck = { id: number; title: string; topic: string; card_count: number }
@@ -9,17 +8,6 @@ type Question = { prompt: string; options?: string[]; answer: string | string[];
 type Grade = { score: number; correct: boolean; feedback: string }
 type QuizAttempt = { id: number; topic: string; question_type: QuestionType; difficulty: string; question_count: number; score: number; total: number; answers: string[]; results: Grade[]; questions: Question[]; duration_seconds: number; created_at: string }
 type Quiz = { topic: string; questionType: QuestionType; difficulty: string; questions: Question[] }
-
-const tools: { id: StudyTool; label: string; description: string }[] = [
-  { id: 'simplify', label: 'Simplify', description: 'Explain difficult material in plain language.' },
-  { id: 'writing', label: 'Academic writing', description: 'Improve clarity, structure, and academic tone.' },
-  { id: 'summarize', label: 'Chapter summary', description: 'Turn a chapter or notes into a structured summary.' },
-  { id: 'concepts', label: 'Key concepts', description: 'Extract and explain the ideas that matter.' },
-  { id: 'definitions', label: 'Definitions', description: 'Build a glossary from your material.' },
-  { id: 'study-guide', label: 'Study guide', description: 'Create objectives, key ideas, and self-checks.' },
-  { id: 'reviewer', label: 'Exam reviewer', description: 'Make a focused reviewer with memory cues.' },
-  { id: 'source-answer', label: 'Source-backed answer', description: 'Answer a question using only your sources.' },
-]
 
 const questionTypes: { id: QuestionType; label: string }[] = [
   { id: 'multiple-choice', label: 'Multiple choice' },
@@ -41,7 +29,6 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 
 export default function StudyStudio() {
   const [tab, setTab] = useState<'tools' | 'flashcards' | 'quizzes'>('tools')
-  const [tool, setTool] = useState<StudyTool>('simplify')
   const [source, setSource] = useState('')
   const [question, setQuestion] = useState('')
   const [output, setOutput] = useState('')
@@ -97,11 +84,11 @@ export default function StudyStudio() {
     void api<StudyCard[]>(`/api/study/decks/${selectedDeck}/cards`).then((data) => { setCards(data); setCardIndex(0); setCardFlipped(false) }).catch((cause) => setError(cause instanceof Error ? cause.message : 'Could not load cards'))
   }, [selectedDeck])
 
-  const generateStudyMaterial = async (event: FormEvent<HTMLFormElement>) => {
+  const generateStudyMaterial = async (event: FormEvent<HTMLFormElement>, kind: 'all' | 'source-answer') => {
     event.preventDefault()
     setBusy(true); setError(''); setOutput('')
     try {
-      const result = await api<{ result: string }>('/api/study/generate', { method: 'POST', body: JSON.stringify({ kind: tool, content: source, question }) })
+      const result = await api<{ result: string }>('/api/study/generate', { method: 'POST', body: JSON.stringify({ kind, content: source, question: kind === 'source-answer' ? question : '' }) })
       setOutput(result.result)
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not generate study material') }
     finally { setBusy(false) }
@@ -181,18 +168,19 @@ export default function StudyStudio() {
     {error && <div className="study-error" role="alert">{error}<button onClick={() => setError('')} aria-label="Dismiss">×</button></div>}
 
     {tab === 'tools' && <>
-      <div className="study-tool-grid">{tools.map((item) => <button type="button" key={item.id} className={tool === item.id ? 'study-tool-card active' : 'study-tool-card'} onClick={() => { setTool(item.id); setOutput('') }}><strong>{item.label}</strong><span>{item.description}</span></button>)}</div>
-      {tool === 'source-answer' ? <form className="study-panel study-source-form" onSubmit={generateStudyMaterial}>
-        <div className="study-panel-heading"><div><p className="eyebrow">SOURCE-BACKED ANSWER</p><h2>Ask your sources</h2><p className="study-panel-note">Add a question and label each source so the answer can stay grounded in your material.</p></div></div>
-        <label>Your question<input className="modal-input" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="What do these sources say about...?" required /></label>
-        <label>Sources (label each source)<textarea className="study-textarea" rows={8} value={source} onChange={(event) => setSource(event.target.value)} required placeholder="Paste your sources here and label them [Source 1], [Source 2], and so on." /></label>
-        <button className="primary-button" disabled={busy}>{busy ? 'Working…' : 'Generate answer'}</button>
-      </form> : <form className="study-panel study-source-form" onSubmit={generateStudyMaterial}>
-        <div className="study-panel-heading"><div><p className="eyebrow">SHARED STUDY MATERIAL</p><h2>Bring your material</h2><p className="study-panel-note">This one material field is used by every study tool above.</p></div></div>
-        <label>Chapter, notes, or reading<textarea className="study-textarea" rows={8} value={source} onChange={(event) => setSource(event.target.value)} required placeholder="Paste your text here to use with the selected study tool." /></label>
-        <button className="primary-button" disabled={busy}>{busy ? 'Working…' : `Generate ${tools.find((item) => item.id === tool)?.label.toLowerCase()}`}</button>
-      </form>}
+      <div className="study-capabilities"><strong>Use your material for</strong><span>plain-language explanations</span><span>academic writing</span><span>chapter summaries</span><span>key concepts</span><span>definitions</span><span>study guides</span><span>exam reviewers</span></div>
+      <form className="study-panel study-source-form" onSubmit={(event) => generateStudyMaterial(event, 'all')}>
+        <div className="study-panel-heading"><div><p className="eyebrow">STUDY PACK</p><h2>Bring your material</h2><p className="study-panel-note">Generate one organized study pack covering all of these uses.</p></div></div>
+        <label>Chapter, notes, or reading<textarea className="study-textarea" rows={8} value={source} onChange={(event) => setSource(event.target.value)} required placeholder="Paste your text here to create a complete study pack." /></label>
+        <button className="primary-button" disabled={busy}>{busy ? 'Working…' : 'Generate study pack'}</button>
+      </form>
       {output && <article className="study-panel study-output"><p className="eyebrow">RESULT</p><div>{output}</div></article>}
+      <form className="study-panel study-source-form study-source-answer-form" onSubmit={(event) => generateStudyMaterial(event, 'source-answer')}>
+        <div className="study-panel-heading"><div><p className="eyebrow">SOURCE-BACKED ANSWER</p><h2>Ask your sources</h2><p className="study-panel-note">Answer a specific question using only labeled source material.</p></div></div>
+        <label>Your question<input className="modal-input" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="What do these sources say about...?" required /></label>
+        <label>Sources (label each source)<textarea className="study-textarea" rows={6} value={source} onChange={(event) => setSource(event.target.value)} required placeholder="Paste your sources here and label them [Source 1], [Source 2], and so on." /></label>
+        <button className="primary-button" disabled={busy}>{busy ? 'Working…' : 'Generate source-backed answer'}</button>
+      </form>
       <form className="study-panel study-inline-form" onSubmit={generateFlashcards}><div><p className="eyebrow">ACTIVE RECALL</p><h2>Generate flashcards from this material</h2><p>Cards are automatically grouped into a named deck by topic.</p></div><label>Number of cards<input className="modal-input" type="number" min={2} max={30} value={flashcardCount} onChange={(event) => setFlashcardCount(Number(event.target.value))} /></label><button className="secondary-button" disabled={busy || !source.trim()}>{busy ? 'Generating…' : 'Create flashcards'}</button></form>
     </>}
 

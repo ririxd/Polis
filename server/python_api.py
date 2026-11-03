@@ -313,6 +313,7 @@ STUDY_TOOL_PROMPTS = {
     "definitions": "Extract important terms and define them in the context of the supplied material. Return a JSON array of objects with term and definition.",
     "study-guide": "Create a structured study guide with learning objectives, key ideas, important terms, connections, and self-check questions. Ground it in the supplied material.",
     "reviewer": "Create a concise exam reviewer from the supplied material, with section headings, key facts, distinctions, and memory cues. Ground it in the source.",
+    "all": "Create one combined study pack from the supplied material. Include a plain-language explanation, academic writing or structure notes where relevant, a chapter summary, key concepts, important definitions, study objectives and self-check questions, and an exam reviewer with memory cues. Use clear headings and avoid repeating the same information across sections. Ground every section in the supplied material.",
     "source-answer": "Answer the student's question using only the supplied sources. Cite source labels such as [Source 1] next to supported claims, distinguish direct evidence from inference, and say when the sources do not establish an answer. Never invent citations.",
 }
 

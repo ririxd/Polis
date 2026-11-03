@@ -7,18 +7,16 @@
 .study-panel-heading { display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; }
 .study-panel-heading .eyebrow, .study-panel > .eyebrow { margin: 0; color: var(--purple); font: 9px 'DM Mono', monospace; letter-spacing: .12em; }
 .study-panel-note { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
-.study-tool-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin-bottom: 14px; }
-.study-tool-card { min-height: 92px; padding: 13px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--surface); text-align: left; cursor: pointer; }
-.study-tool-card:hover, .study-tool-card.active { border-color: var(--purple); background: color-mix(in srgb, var(--purple) 7%, var(--surface)); }
-.study-tool-card strong, .study-tool-card span { display: block; }
-.study-tool-card strong { font-size: 12px; font-weight: 600; }
-.study-tool-card span { margin-top: 7px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.study-capabilities { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 12px; margin-bottom: 14px; color: var(--muted); font-size: 10px; }
+.study-capabilities strong { color: var(--ink); font-size: 11px; }
+.study-capabilities span::before { content: '·'; margin-right: 7px; color: var(--purple); }
 .study-source-form { display: grid; gap: 12px; }
 .study-source-form label, .study-quiz-form label, .study-manual-deck label, .study-manual-card label { display: grid; gap: 4px; color: var(--muted); font-size: 10px; }
 .study-source-form .modal-input, .study-quiz-form .modal-input, .study-manual-deck .modal-input, .study-manual-card .modal-input { margin: 0; }
 .study-textarea { width: 100%; min-height: 74px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; outline: none; color: var(--ink); background: var(--bg); font: 11px/1.65 'DM Sans', sans-serif; resize: vertical; }
 .study-textarea:focus, .study-source-form input:focus { border-color: var(--purple); }
 .study-output { margin-top: 12px; }
+.study-source-answer-form { margin-top: 12px; }
 .study-output > div { margin-top: 12px; color: var(--ink); font-size: 12px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
 .study-inline-form { display: flex; align-items: end; gap: 14px; margin-top: 12px; }
 .study-inline-form > div { flex: 1; }

@@ -102,7 +102,7 @@ export default function StudyStudio() {
     event.preventDefault()
     setBusy(true); setError(''); setOutput('')
     try {
-      const result = await api<{ result: string }>('/api/study/generate', { method: 'POST', body: JSON.stringify({ kind: tool, content: source, topic, question }) })
+      const result = await api<{ result: string }>('/api/study/generate', { method: 'POST', body: JSON.stringify({ kind: tool, content: source, question }) })
       setOutput(result.result)
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not generate study material') }
     finally { setBusy(false) }
@@ -112,7 +112,7 @@ export default function StudyStudio() {
     event.preventDefault()
     setBusy(true); setError('')
     try {
-      const result = await api<{ id: number; cards: StudyCard[] }>('/api/study/flashcards/generate', { method: 'POST', body: JSON.stringify({ content: source, topic, count: flashcardCount }) })
+      const result = await api<{ id: number; cards: StudyCard[] }>('/api/study/flashcards/generate', { method: 'POST', body: JSON.stringify({ content: source, count: flashcardCount }) })
       await refreshDecks(); setSelectedDeck(result.id); setCards(result.cards); setCardIndex(0); setTab('flashcards')
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not generate flashcards') }
     finally { setBusy(false) }
@@ -184,8 +184,7 @@ export default function StudyStudio() {
     {tab === 'tools' && <>
       <div className="study-tool-grid">{tools.map((item) => <button type="button" key={item.id} className={tool === item.id ? 'study-tool-card active' : 'study-tool-card'} onClick={() => { setTool(item.id); setOutput('') }}><strong>{item.label}</strong><span>{item.description}</span></button>)}</div>
       <form className="study-panel study-source-form" onSubmit={generateStudyMaterial}>
-        <div className="study-panel-heading"><div><p className="eyebrow">{tools.find((item) => item.id === tool)?.label.toUpperCase()}</p><h2>Bring your material</h2></div></div>
-        <label>Topic or course<input className="modal-input" value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="e.g. comparative politics" /></label>
+        <div className="study-panel-heading"><div><p className="eyebrow">{tools.find((item) => item.id === tool)?.label.toUpperCase()}</p><h2>Bring your material</h2><p className="study-form-hint">The topic is inferred from the text you provide.</p></div></div>
         {tool === 'source-answer' && <label>Your question<input className="modal-input" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="What do these sources say about...?" required /></label>}
         <label>{tool === 'writing' ? 'Draft to work on' : tool === 'source-answer' ? 'Sources (label each source)' : 'Chapter, notes, or reading'}<textarea className="study-textarea" rows={8} value={source} onChange={(event) => setSource(event.target.value)} required placeholder="Paste your text here. Source-backed answers work best when sources are labeled [Source 1], [Source 2], and so on." /></label>
         <button className="primary-button" disabled={busy}>{busy ? 'Working…' : 'Generate'}</button>

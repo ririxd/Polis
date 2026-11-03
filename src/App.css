@@ -259,15 +259,11 @@
 }
 select {
   min-height: 40px;
-  padding: 9px 36px 9px 12px;
-  appearance: none;
+  padding: 9px 12px;
+  appearance: auto;
   border: 1px solid color-mix(in srgb, var(--line) 82%, var(--purple));
   color: var(--ink);
   background-color: var(--surface);
-  background-image: linear-gradient(45deg, transparent 50%, var(--purple) 50%), linear-gradient(135deg, var(--purple) 50%, transparent 50%);
-  background-position: calc(100% - 16px) 17px, calc(100% - 11px) 17px;
-  background-repeat: no-repeat;
-  background-size: 5px 5px, 5px 5px;
 }
 select:hover { border-color: var(--purple); }
 .panel, .section-block, .course-large-card, .calendar-card, .calendar-agenda, .insight-highlight, .insight-chart, .insight-note, .customizer, .debate-start, .debate-workspace, .debate-history, .recitation-start, .recitation-card, .political-panel {
@@ -279,7 +275,15 @@ select:hover { border-color: var(--purple); }
 .modal-backdrop { backdrop-filter: blur(7px); background: rgba(57, 28, 40, .38); }
 .modal { border-radius: 16px; box-shadow: 0 24px 70px rgba(57, 28, 40, .22); }
 .toast { border: 1px solid rgba(255,255,255,.45); border-radius: 10px; box-shadow: var(--shadow-md); }
-.empty-state { border-radius: 10px; background: color-mix(in srgb, var(--bg) 75%, var(--surface)); }
+.empty-state {
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  padding: 18px 20px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg) 75%, var(--surface));
+  line-height: 1.5;
+}
 @media (max-width: 680px) {
   .sidebar { box-shadow: 0 8px 22px rgba(111, 55, 76, .04); }
   .welcome-row { padding: 34px 0 24px; }

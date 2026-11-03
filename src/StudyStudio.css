@@ -97,7 +97,7 @@
 .study-textarea { min-height: 150px; }
 .study-quiz-form select, .study-quiz-form input[type="number"] {
   min-height: 42px;
-  padding: 10px 38px 10px 13px;
+  padding: 10px 13px;
   border: 1px solid color-mix(in srgb, var(--line) 78%, var(--purple));
   border-radius: 10px;
   color: var(--ink);
@@ -105,11 +105,7 @@
   line-height: 1.25;
 }
 .study-quiz-form select {
-  appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--purple) 50%), linear-gradient(135deg, var(--purple) 50%, transparent 50%);
-  background-position: calc(100% - 17px) 18px, calc(100% - 12px) 18px;
-  background-repeat: no-repeat;
-  background-size: 5px 5px, 5px 5px;
+  appearance: auto;
 }
 .study-quiz-form select:hover, .study-quiz-form input[type="number"]:hover { border-color: var(--purple); }
 .study-quiz-form select:focus, .study-quiz-form input[type="number"]:focus { background-color: var(--surface); }

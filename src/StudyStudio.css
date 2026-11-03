@@ -110,6 +110,7 @@
 }
 .study-quiz-form select {
   appearance: none;
+  padding-right: 34px;
 }
 .study-quiz-form select:hover, .study-quiz-form input[type="number"]:hover { border-color: var(--purple); }
 .study-quiz-form select:focus, .study-quiz-form input[type="number"]:focus { background-color: var(--surface); }

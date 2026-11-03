@@ -188,9 +188,9 @@ export default function StudyStudio() {
         <label>Sources (label each source)<textarea className="study-textarea" rows={8} value={source} onChange={(event) => setSource(event.target.value)} required placeholder="Paste your sources here and label them [Source 1], [Source 2], and so on." /></label>
         <button className="primary-button" disabled={busy}>{busy ? 'Working…' : 'Generate answer'}</button>
       </form> : <form className="study-panel study-source-form" onSubmit={generateStudyMaterial}>
-        <div className="study-panel-heading"><div><p className="eyebrow">SHARED STUDY MATERIAL</p><h2>Bring your material</h2><p className="study-panel-note">This material stays available while you switch between study tools.</p></div></div>
-        <label>{tool === 'writing' ? 'Draft to work on' : 'Chapter, notes, or reading'}<textarea className="study-textarea" rows={8} value={source} onChange={(event) => setSource(event.target.value)} required placeholder="Paste your text here to use with the selected study tool." /></label>
-        <button className="primary-button" disabled={busy}>{busy ? 'Working…' : 'Generate'}</button>
+        <div className="study-panel-heading"><div><p className="eyebrow">SHARED STUDY MATERIAL</p><h2>Bring your material</h2><p className="study-panel-note">This one material field is used by every study tool above.</p></div></div>
+        <label>Chapter, notes, or reading<textarea className="study-textarea" rows={8} value={source} onChange={(event) => setSource(event.target.value)} required placeholder="Paste your text here to use with the selected study tool." /></label>
+        <button className="primary-button" disabled={busy}>{busy ? 'Working…' : `Generate ${tools.find((item) => item.id === tool)?.label.toLowerCase()}`}</button>
       </form>}
       {output && <article className="study-panel study-output"><p className="eyebrow">RESULT</p><div>{output}</div></article>}
       <form className="study-panel study-inline-form" onSubmit={generateFlashcards}><div><p className="eyebrow">ACTIVE RECALL</p><h2>Generate flashcards from this material</h2><p>Cards are automatically grouped into a named deck by topic.</p></div><label>Number of cards<input className="modal-input" type="number" min={2} max={30} value={flashcardCount} onChange={(event) => setFlashcardCount(Number(event.target.value))} /></label><button className="secondary-button" disabled={busy || !source.trim()}>{busy ? 'Generating…' : 'Create flashcards'}</button></form>

@@ -213,7 +213,6 @@ function App() {
   const openNav = (item: string) => {
     setActiveNav(item)
     if (item === 'Knowledge graph') void loadKnowledgeGraph()
-    showToast(`${item} view selected`)
   }
 
   const startRecitation = async (event: FormEvent<HTMLFormElement>) => {

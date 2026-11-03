@@ -30,8 +30,8 @@
 .compare-selects label { flex: 1; color: var(--soft); font-size: 10px; }
 .compare-selects .modal-input { display: block; margin: 6px 0 0; }
 .compare-selects select.modal-input, .timeline-filters select.modal-input {
-  padding-right: 18px;
-  padding-left: 18px;
+  padding-right: 34px;
+  padding-left: 12px;
 }
 .compare-selects > span { padding-bottom: 20px; color: var(--purple); font: 11px 'DM Mono', monospace; }
 .comparison-grid { display: grid; grid-template-columns: 145px 1fr 1fr; gap: 0 12px; }

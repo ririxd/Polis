@@ -109,7 +109,7 @@
   line-height: 1.25;
 }
 .study-quiz-form select {
-  appearance: auto;
+  appearance: none;
 }
 .study-quiz-form select:hover, .study-quiz-form input[type="number"]:hover { border-color: var(--purple); }
 .study-quiz-form select:focus, .study-quiz-form input[type="number"]:focus { background-color: var(--surface); }

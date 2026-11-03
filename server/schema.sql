@@ -186,8 +186,42 @@ CREATE TABLE IF NOT EXISTS app_settings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS study_flashcard_decks (
+  id BIGSERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  topic TEXT NOT NULL DEFAULT '',
+  source_text TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS study_flashcards (
+  id BIGSERIAL PRIMARY KEY,
+  deck_id BIGINT NOT NULL REFERENCES study_flashcard_decks(id) ON DELETE CASCADE,
+  front TEXT NOT NULL,
+  back TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS study_quiz_attempts (
+  id BIGSERIAL PRIMARY KEY,
+  topic TEXT NOT NULL DEFAULT '',
+  question_type TEXT NOT NULL,
+  difficulty TEXT NOT NULL,
+  question_count INTEGER NOT NULL,
+  score INTEGER NOT NULL,
+  total INTEGER NOT NULL,
+  answers JSONB NOT NULL DEFAULT '[]'::jsonb,
+  results JSONB NOT NULL DEFAULT '[]'::jsonb,
+  questions JSONB NOT NULL DEFAULT '[]'::jsonb,
+  duration_seconds INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS knowledge_entities_type_idx ON knowledge_entities(entity_type);
 CREATE INDEX IF NOT EXISTS recitation_questions_session_idx ON recitation_questions(session_id);
 CREATE INDEX IF NOT EXISTS debate_arguments_debate_idx ON debate_arguments(debate_id);
 CREATE INDEX IF NOT EXISTS research_sources_project_idx ON research_sources(project_id);
 CREATE INDEX IF NOT EXISTS study_sessions_subject_idx ON study_sessions(subject_id);
+CREATE INDEX IF NOT EXISTS study_flashcards_deck_idx ON study_flashcards(deck_id, position);
+CREATE INDEX IF NOT EXISTS study_quiz_attempts_created_idx ON study_quiz_attempts(created_at DESC);

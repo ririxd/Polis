@@ -305,6 +305,213 @@ def list_recitations():
     )
 
 
+STUDY_TOOL_PROMPTS = {
+    "simplify": "Explain the material in plain language for a student new to the topic. Keep important nuance and add a short example.",
+    "writing": "Give academic writing assistance. Return a revised version that preserves the student's meaning, followed by concise notes on structure, clarity, and evidence. Do not invent facts or sources.",
+    "summarize": "Summarize the supplied chapter or notes. Organize the summary by main argument, section or theme, supporting evidence, and takeaway. Do not add unsupported material.",
+    "concepts": "Extract the key concepts. For each, give a concise definition and explain why it matters in this material. Return a JSON array of objects with concept and explanation.",
+    "definitions": "Extract important terms and define them in the context of the supplied material. Return a JSON array of objects with term and definition.",
+    "study-guide": "Create a structured study guide with learning objectives, key ideas, important terms, connections, and self-check questions. Ground it in the supplied material.",
+    "reviewer": "Create a concise exam reviewer from the supplied material, with section headings, key facts, distinctions, and memory cues. Ground it in the source.",
+    "source-answer": "Answer the student's question using only the supplied sources. Cite source labels such as [Source 1] next to supported claims, distinguish direct evidence from inference, and say when the sources do not establish an answer. Never invent citations.",
+}
+
+
+@app.post("/api/study/generate")
+def generate_study_material(body: dict[str, Any]):
+    kind = body.get("kind")
+    if kind not in STUDY_TOOL_PROMPTS:
+        raise HTTPException(400, "Unknown study tool")
+    content = required_text(body.get("content"), "content")
+    topic = str(body.get("topic", "")).strip()[:300]
+    if len(content) > 24000:
+        raise HTTPException(400, "Please keep source text under 24,000 characters")
+    try:
+        result = ai_json(f"""You are Polis, a careful academic study assistant.
+Task: {STUDY_TOOL_PROMPTS[kind]}
+Topic: {topic or 'Not specified'}
+Student question or instruction: {str(body.get('question', '')).strip()[:3000] or 'Use the selected study tool.'}
+Source material:
+{content}
+Return JSON with one string field named 'result'. For list-based tasks, put a readable numbered list in result. Keep the response useful and focused.""")
+        return {"result": str(result.get("result", ""))}
+    except Exception as error:
+        if isinstance(error, HTTPException):
+            raise
+        raise HTTPException(502, "Could not generate study material") from error
+
+
+@app.get("/api/study/decks")
+def list_study_decks():
+    return rows(
+        """SELECT d.*, COUNT(c.id)::INTEGER AS card_count
+           FROM study_flashcard_decks d LEFT JOIN study_flashcards c ON c.deck_id = d.id
+           GROUP BY d.id ORDER BY d.created_at DESC, d.id DESC"""
+    )
+
+
+@app.get("/api/study/decks/{deck_id}/cards")
+def list_study_cards(deck_id: int):
+    return rows("SELECT * FROM study_flashcards WHERE deck_id = %s ORDER BY position, id", (deck_id,))
+
+
+@app.post("/api/study/decks/{deck_id}/cards", status_code=201)
+def add_study_card(deck_id: int, body: dict[str, Any]):
+    front = required_text(body.get("front"), "front")[:1000]
+    back = required_text(body.get("back"), "back")[:3000]
+    deck = one("SELECT id FROM study_flashcard_decks WHERE id = %s", (deck_id,))
+    if not deck:
+        raise HTTPException(404, "Flashcard deck not found")
+    return one(
+        """INSERT INTO study_flashcards (deck_id, front, back, position)
+           VALUES (%s, %s, %s, (SELECT COALESCE(MAX(position), -1) + 1 FROM study_flashcards WHERE deck_id = %s))
+           RETURNING *""",
+        (deck_id, front, back, deck_id),
+    )
+
+
+def save_study_deck(title: str, topic: str, source_text: str, cards: list[dict[str, Any]]):
+    with pool.connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO study_flashcard_decks (title, topic, source_text) VALUES (%s, %s, %s) RETURNING id, title, topic, source_text, created_at",
+                (title, topic, source_text),
+            )
+            deck = cursor.fetchone()
+            for position, card in enumerate(cards):
+                front = required_text(card.get("front"), "card front")[:1000]
+                back = required_text(card.get("back"), "card back")[:3000]
+                cursor.execute(
+                    "INSERT INTO study_flashcards (deck_id, front, back, position) VALUES (%s, %s, %s, %s)",
+                    (deck["id"], front, back, position),
+                )
+    return {**deck, "card_count": len(cards)}
+
+
+@app.post("/api/study/decks", status_code=201)
+def create_study_deck(body: dict[str, Any]):
+    title = required_text(body.get("title"), "title")[:200]
+    cards = body.get("cards", [])
+    if not isinstance(cards, list) or len(cards) > 100:
+        raise HTTPException(400, "cards must be a list of at most 100 cards")
+    return save_study_deck(title, str(body.get("topic", ""))[:300], "", cards)
+
+
+@app.post("/api/study/flashcards/generate", status_code=201)
+def generate_study_flashcards(body: dict[str, Any]):
+    content = required_text(body.get("content"), "content")
+    count = max(2, min(int(body.get("count", 10)), 30))
+    topic = str(body.get("topic", "")).strip()[:300]
+    if len(content) > 24000:
+        raise HTTPException(400, "Please keep source text under 24,000 characters")
+    try:
+        generated = ai_json(f"""Create exactly {count} useful study flashcards from the supplied material.
+Group related cards under a concise topic for automatic deck organization. Make fronts answerable without context; make backs accurate and concise.
+Topic hint: {topic or 'Infer from the material'}
+Material:
+{content}
+Return JSON with title (short deck title), topic (subject/topic), cards (array of objects with front and back).""")
+        cards = generated.get("cards")
+        if not isinstance(cards, list) or not cards:
+            raise HTTPException(502, "The AI did not return flashcards")
+        deck = save_study_deck(str(generated.get("title") or topic or "Study deck")[:200], str(generated.get("topic") or topic)[:300], content[:24000], cards[:count])
+        return {**deck, "cards": rows("SELECT * FROM study_flashcards WHERE deck_id = %s ORDER BY position, id", (deck["id"],))}
+    except Exception as error:
+        if isinstance(error, HTTPException):
+            raise
+        raise HTTPException(502, "Could not generate flashcards") from error
+
+
+QUIZ_TYPES = {"multiple-choice", "true-false", "identification", "enumeration", "situational", "essay"}
+QUIZ_DIFFICULTIES = {"beginner", "intermediate", "advanced"}
+
+
+@app.post("/api/study/quizzes/generate")
+def generate_study_quiz(body: dict[str, Any]):
+    content = required_text(body.get("content"), "content")
+    question_type = body.get("questionType")
+    difficulty = body.get("difficulty")
+    if question_type not in QUIZ_TYPES or difficulty not in QUIZ_DIFFICULTIES:
+        raise HTTPException(400, "Choose a supported question type and difficulty")
+    count = max(1, min(int(body.get("count", 10)), 30))
+    if len(content) > 24000:
+        raise HTTPException(400, "Please keep source text under 24,000 characters")
+    shapes = {
+        "multiple-choice": "options (array of 4 strings) and answer (exact option string)",
+        "true-false": "options (array containing True and False) and answer (True or False)",
+        "identification": "answer (short expected term or phrase)",
+        "enumeration": "answer (array of required items)",
+        "situational": "answer (concise expected reasoning or response)",
+        "essay": "answer (a short scoring rubric with essential points)",
+    }
+    try:
+        generated = ai_json(f"""Create exactly {count} {question_type} questions at {difficulty} difficulty from the supplied study material.
+Every question must have prompt, answer, explanation, concept (a concise topic for performance analysis), and {shapes[question_type]}.
+Questions must be answerable from the material and must not repeat.
+Material:
+{content}
+Return JSON with questions as an array of objects.""")
+        questions = generated.get("questions")
+        if not isinstance(questions, list) or len(questions) < 1:
+            raise HTTPException(502, "The AI did not return quiz questions")
+        return {"topic": str(body.get("topic", "Study quiz"))[:300], "questionType": question_type, "difficulty": difficulty, "questions": questions[:count]}
+    except Exception as error:
+        if isinstance(error, HTTPException):
+            raise
+        raise HTTPException(502, "Could not generate quiz questions") from error
+
+
+@app.get("/api/study/quizzes")
+def list_study_quizzes():
+    return rows("SELECT * FROM study_quiz_attempts ORDER BY created_at DESC, id DESC LIMIT 50")
+
+
+@app.post("/api/study/quizzes/grade")
+def grade_study_quiz(body: dict[str, Any]):
+    questions = body.get("questions", [])
+    answers = body.get("answers", [])
+    if not isinstance(questions, list) or not isinstance(answers, list) or not questions or len(questions) != len(answers):
+        raise HTTPException(400, "Provide one answer for each quiz question")
+    try:
+        result = ai_json(f"""Grade a student's quiz answers against the supplied questions and answer key.
+Use partial credit for enumeration, situational, and essay responses. Be fair and concise. The score for each question must be an integer from 0 to 100; mark correct true only for a fully correct answer.
+Questions and student answers:
+{json.dumps([{ 'question': question, 'student_answer': answer } for question, answer in zip(questions, answers)], ensure_ascii=False)}
+Return JSON with results as an array in the same order. Each result must contain score (0-100), correct (boolean), and feedback (one or two concise sentences).""")
+        results = result.get("results")
+        if not isinstance(results, list) or len(results) != len(questions):
+            raise HTTPException(502, "The grader returned an incomplete result")
+        normalized = []
+        for item in results:
+            normalized.append({
+                "score": max(0, min(100, int(item.get("score", 0)))),
+                "correct": bool(item.get("correct", False)),
+                "feedback": str(item.get("feedback", ""))[:1000],
+            })
+        return {"results": normalized}
+    except Exception as error:
+        if isinstance(error, HTTPException):
+            raise
+        raise HTTPException(502, "Could not grade this quiz") from error
+
+
+@app.post("/api/study/quizzes/attempts", status_code=201)
+def save_study_quiz_attempt(body: dict[str, Any]):
+    questions = body.get("questions", [])
+    answers = body.get("answers", [])
+    results = body.get("results", [])
+    if not isinstance(questions, list) or not isinstance(answers, list) or not questions:
+        raise HTTPException(400, "Quiz questions and answers are required")
+    total = len(questions)
+    score = max(0, min(int(body.get("score", 0)), 100))
+    return one(
+        """INSERT INTO study_quiz_attempts (topic, question_type, difficulty, question_count, score, total, answers, results, questions, duration_seconds)
+           VALUES (%s, %s, %s, %s, %s, 100, %s::jsonb, %s::jsonb, %s::jsonb, %s)
+           RETURNING *""",
+        (str(body.get("topic", "Study quiz"))[:300], str(body.get("questionType", "multiple-choice")), str(body.get("difficulty", "intermediate")), total, score, json.dumps(answers), json.dumps(results), json.dumps(questions), max(0, int(body.get("durationSeconds", 0)))),
+    )
+
+
 @app.get("/api/research/projects")
 def list_research_projects():
     return rows("SELECT * FROM research_projects ORDER BY created_at DESC, id DESC")

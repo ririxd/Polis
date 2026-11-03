@@ -33,6 +33,8 @@ Vercel detects the root `index.py` FastAPI app. FastAPI serves the built React f
 
 Apply schema changes separately with `DATABASE_URL_UNPOOLED` and the direct migration workflow. Do not use the unpooled URL for normal request traffic.
 
+The Study studio adds AI study tools, flashcard decks, and saved quiz analytics. Apply `server/migrations/004_study_studio.sql` to an existing database before deploying it; fresh databases receive the same tables from `server/schema.sql`.
+
 ## Neon services
 
 The project is linked to the `production` branch in Neon. `neon.ts` provisions the `assets` Object Storage bucket, the `health` Neon Function, and Realtime. Run `neon deploy --env .env.local` after changing the infrastructure config.
@@ -50,6 +52,10 @@ The local API loads Neon variables from `.env.local` and exposes `GET /api/neon/
 - `GET/POST /api/documents`
 - `GET/POST/PATCH/DELETE /api/research/projects`
 - `GET/POST/PATCH/DELETE /api/research/sources`
+- `POST /api/study/generate`
+- `GET/POST /api/study/decks` and `GET/POST /api/study/decks/{id}/cards`
+- `POST /api/study/flashcards/generate`
+- `POST /api/study/quizzes/generate`, `POST /api/study/quizzes/grade`, `GET /api/study/quizzes`, `POST /api/study/quizzes/attempts`
 
 The Research assistant stores projects, source metadata, APA 7 references, and literature review notes in Postgres. Apply `server/migrations/002_research_source_metadata.sql` to an existing database before deploying the Research assistant update; fresh databases receive the same column from `server/schema.sql`.
 

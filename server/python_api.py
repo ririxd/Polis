@@ -215,17 +215,30 @@ def create_document(body: dict[str, Any]):
 
 @app.get("/api/profile")
 def get_profile():
-    return one("SELECT name, term, year, avatar_url FROM profile WHERE id = 1") or {"name": "", "term": "", "year": "", "avatar_url": ""}
+    try:
+        return one("SELECT name, term, year, avatar_url FROM profile WHERE id = 1") or {"name": "", "term": "", "year": "", "avatar_url": ""}
+    except UndefinedColumn:
+        profile = one("SELECT name, term, year FROM profile WHERE id = 1") or {"name": "", "term": "", "year": ""}
+        return {**profile, "avatar_url": ""}
 
 
 @app.put("/api/profile")
 def save_profile(body: dict[str, Any]):
-    return one(
-        """INSERT INTO profile (id, name, term, year, avatar_url) VALUES (1, %s, %s, %s, %s)
-           ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, term = EXCLUDED.term, year = EXCLUDED.year, avatar_url = EXCLUDED.avatar_url
-           RETURNING name, term, year, avatar_url""",
-        (str(body.get("name", "")).strip(), str(body.get("term", "")).strip(), str(body.get("year", "")).strip(), str(body.get("avatar_url", "")).strip()),
-    )
+    values = (str(body.get("name", "")).strip(), str(body.get("term", "")).strip(), str(body.get("year", "")).strip(), str(body.get("avatar_url", "")).strip())
+    try:
+        return one(
+            """INSERT INTO profile (id, name, term, year, avatar_url) VALUES (1, %s, %s, %s, %s)
+               ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, term = EXCLUDED.term, year = EXCLUDED.year, avatar_url = EXCLUDED.avatar_url
+               RETURNING name, term, year, avatar_url""",
+            values,
+        )
+    except UndefinedColumn:
+        return one(
+            """INSERT INTO profile (id, name, term, year) VALUES (1, %s, %s, %s)
+               ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, term = EXCLUDED.term, year = EXCLUDED.year
+               RETURNING name, term, year""",
+            values[:3],
+        ) | {"avatar_url": ""}
 
 
 @app.get("/api/goals")

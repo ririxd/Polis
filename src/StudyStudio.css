@@ -114,6 +114,7 @@
 }
 .study-quiz-form select:hover, .study-quiz-form input[type="number"]:hover { border-color: var(--purple); }
 .study-quiz-form select:focus, .study-quiz-form input[type="number"]:focus { background-color: var(--surface); }
+.study-quiz-form .dropdown-trigger { min-height: 42px; padding: 10px 12px; }
 .study-tool-tabs button, .study-tabs button { transition: color .18s, border-color .18s, background .18s; }
 .study-tabs button:hover { color: var(--ink); background: color-mix(in srgb, var(--purple) 6%, transparent); }
 .study-output { border-left: 3px solid var(--purple); }

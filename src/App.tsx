@@ -28,6 +28,7 @@ type NotificationItem = { id: string; title: string; detail: string; date: Date;
 type ChatMessage = { role: 'user' | 'assistant'; content: string }
 const activity: Activity[] = []
 const notificationStorageKey = 'polis.read-notification-ids'
+const themeStorageKey = 'polis.theme'
 
 function toLocalDateString(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -49,6 +50,15 @@ function loadReadNotifications(): string[] {
     return Array.isArray(parsed) && parsed.every((item) => typeof item === 'string') ? parsed : []
   } catch {
     return []
+  }
+}
+
+function loadTheme(): Theme {
+  try {
+    const saved = window.localStorage.getItem(themeStorageKey)
+    return saved === 'dark' ? 'dark' : 'light'
+  } catch {
+    return 'light'
   }
 }
 
@@ -88,7 +98,7 @@ const initialWidgets: Record<Widget, boolean> = {
 }
 
 function App() {
-  const [theme, setTheme] = useState<Theme>('light')
+  const [theme, setTheme] = useState<Theme>(loadTheme)
   const [activeNav, setActiveNav] = useState('Overview')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [showCustomizer, setShowCustomizer] = useState(false)
@@ -143,6 +153,10 @@ function App() {
   const [showDebateHistory, setShowDebateHistory] = useState(false)
 
   const [toast, setToast] = useState('')
+
+  useEffect(() => {
+    try { window.localStorage.setItem(themeStorageKey, theme) } catch { /* Keep the current theme for this session. */ }
+  }, [theme])
   const [searchQuery, setSearchQuery] = useState('')
   const [deadlineItems, setDeadlineItems] = useState<Deadline[]>([])
   const [newDeadline, setNewDeadline] = useState({ title: '', subject: '', date: '' })

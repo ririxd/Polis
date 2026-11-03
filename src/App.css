@@ -259,7 +259,7 @@
 }
 select {
   min-height: 40px;
-  padding: 9px 12px;
+  padding: 10px 16px;
   appearance: auto;
   border: 1px solid color-mix(in srgb, var(--line) 82%, var(--purple));
   color: var(--ink);
@@ -270,7 +270,7 @@ select:hover { border-color: var(--purple); }
   box-shadow: none;
 }
 .panel, .section-block, .calendar-card, .calendar-agenda, .insight-highlight, .insight-chart, .insight-note, .customizer {
-  padding: 24px;
+  padding: 28px 24px 24px;
 }
 .modal-backdrop { backdrop-filter: blur(7px); background: rgba(57, 28, 40, .38); }
 .modal { border-radius: 16px; box-shadow: 0 24px 70px rgba(57, 28, 40, .22); }

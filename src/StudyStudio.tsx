@@ -182,12 +182,16 @@ export default function StudyStudio() {
 
     {tab === 'tools' && <>
       <div className="study-tool-grid">{tools.map((item) => <button type="button" key={item.id} className={tool === item.id ? 'study-tool-card active' : 'study-tool-card'} onClick={() => { setTool(item.id); setOutput('') }}><strong>{item.label}</strong><span>{item.description}</span></button>)}</div>
-      <form className="study-panel study-source-form" onSubmit={generateStudyMaterial}>
-        <div className="study-panel-heading"><div><p className="eyebrow">{tools.find((item) => item.id === tool)?.label.toUpperCase()}</p><h2>Bring your material</h2></div></div>
-        {tool === 'source-answer' && <label>Your question<input className="modal-input" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="What do these sources say about...?" required /></label>}
-        <label>{tool === 'writing' ? 'Draft to work on' : tool === 'source-answer' ? 'Sources (label each source)' : 'Chapter, notes, or reading'}<textarea className="study-textarea" rows={8} value={source} onChange={(event) => setSource(event.target.value)} required placeholder="Paste your text here. Source-backed answers work best when sources are labeled [Source 1], [Source 2], and so on." /></label>
+      {tool === 'source-answer' ? <form className="study-panel study-source-form" onSubmit={generateStudyMaterial}>
+        <div className="study-panel-heading"><div><p className="eyebrow">SOURCE-BACKED ANSWER</p><h2>Ask your sources</h2><p className="study-panel-note">Add a question and label each source so the answer can stay grounded in your material.</p></div></div>
+        <label>Your question<input className="modal-input" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="What do these sources say about...?" required /></label>
+        <label>Sources (label each source)<textarea className="study-textarea" rows={8} value={source} onChange={(event) => setSource(event.target.value)} required placeholder="Paste your sources here and label them [Source 1], [Source 2], and so on." /></label>
+        <button className="primary-button" disabled={busy}>{busy ? 'Working…' : 'Generate answer'}</button>
+      </form> : <form className="study-panel study-source-form" onSubmit={generateStudyMaterial}>
+        <div className="study-panel-heading"><div><p className="eyebrow">SHARED STUDY MATERIAL</p><h2>Bring your material</h2><p className="study-panel-note">This material stays available while you switch between study tools.</p></div></div>
+        <label>{tool === 'writing' ? 'Draft to work on' : 'Chapter, notes, or reading'}<textarea className="study-textarea" rows={8} value={source} onChange={(event) => setSource(event.target.value)} required placeholder="Paste your text here to use with the selected study tool." /></label>
         <button className="primary-button" disabled={busy}>{busy ? 'Working…' : 'Generate'}</button>
-      </form>
+      </form>}
       {output && <article className="study-panel study-output"><p className="eyebrow">RESULT</p><div>{output}</div></article>}
       <form className="study-panel study-inline-form" onSubmit={generateFlashcards}><div><p className="eyebrow">ACTIVE RECALL</p><h2>Generate flashcards from this material</h2><p>Cards are automatically grouped into a named deck by topic.</p></div><label>Number of cards<input className="modal-input" type="number" min={2} max={30} value={flashcardCount} onChange={(event) => setFlashcardCount(Number(event.target.value))} /></label><button className="secondary-button" disabled={busy || !source.trim()}>{busy ? 'Generating…' : 'Create flashcards'}</button></form>
     </>}

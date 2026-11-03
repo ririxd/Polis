@@ -45,14 +45,14 @@
 .study-quiz-layout { grid-template-columns: minmax(0, 1.35fr) minmax(220px, .65fr); }
 .study-quiz-form { display: grid; gap: 11px; }
 .study-quiz-form > .eyebrow, .study-analytics > .eyebrow { margin: 0; color: var(--purple); font: 9px 'DM Mono', monospace; letter-spacing: .12em; }
-.study-quiz-form h2, .study-analytics h2 { margin: -7px 0 3px; }
+.study-quiz-form h2, .study-analytics h2 { margin: 0 0 7px; }
 .study-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; align-items: end; }
 .study-timed-label { display: flex !important; align-items: center; justify-content: space-between; min-height: 35px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; }
 .study-timed-label input { accent-color: var(--purple); }
-.study-analytics-number { display: flex; align-items: baseline; gap: 8px; margin: 22px 0 5px; color: var(--ink); font: 500 35px Georgia, serif; }
+.study-analytics-number { display: flex; align-items: baseline; gap: 8px; margin: 26px 0 5px; color: var(--ink); font: 500 35px Georgia, serif; }
 .study-analytics-number span { color: var(--muted); font: 10px 'DM Sans', sans-serif; }
 .study-analytics > p { color: var(--muted); font-size: 10px; }
-.study-analytics h3 { margin: 26px 0 10px; color: var(--ink); font: 500 15px Georgia, serif; }
+.study-analytics h3 { margin: 30px 0 12px; color: var(--ink); font: 500 15px Georgia, serif; }
 .study-weak-topic { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; }
 .study-weak-topic b { color: #ba7667; font-weight: 500; white-space: nowrap; }
 .study-live-quiz { margin-bottom: 12px; }
@@ -91,6 +91,10 @@
 .study-quiz-form { gap: 14px; }
 .study-quiz-form .study-textarea { min-height: 152px; }
 .study-analytics-number { margin-top: 26px; }
+.study-analytics .empty-state, .study-history .empty-state {
+  margin-top: 16px;
+  padding: 24px 28px;
+}
 .study-capabilities { padding: 12px 15px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--surface) 72%, var(--bg)); }
 .study-capabilities strong { letter-spacing: .01em; }
 .study-source-form .primary-button { min-height: 42px; }

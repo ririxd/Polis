@@ -279,10 +279,21 @@ select:hover { border-color: var(--purple); }
   min-height: 66px;
   display: flex;
   align-items: center;
-  padding: 18px 20px;
+  margin: 14px 0 0;
+  padding: 22px 30px;
   border-radius: 10px;
   background: color-mix(in srgb, var(--bg) 75%, var(--surface));
   line-height: 1.5;
+}
+select.modal-input {
+  min-height: 42px;
+  padding: 10px 18px;
+}
+.quick-stats-grid .panel {
+  padding-top: 32px;
+}
+.study-stats .empty-state {
+  margin-top: 18px;
 }
 @media (max-width: 680px) {
   .sidebar { box-shadow: 0 8px 22px rgba(111, 55, 76, .04); }

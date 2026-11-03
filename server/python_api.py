@@ -15,6 +15,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from psycopg.errors import UndefinedColumn
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
@@ -708,9 +709,14 @@ def create_deadline(body: dict[str, Any]):
 
 @app.get("/api/calendar-events")
 def list_calendar_events():
-    return rows("""SELECT *, COALESCE(event_date, make_date(2026, 11, LEAST(GREATEST(date, 1), 30)))::text AS calendar_date
-                  FROM calendar_events
-                  ORDER BY COALESCE(event_date, make_date(2026, 11, LEAST(GREATEST(date, 1), 30))), time""")
+    try:
+        return rows("""SELECT *, COALESCE(event_date, make_date(2026, 11, LEAST(GREATEST(date, 1), 30)))::text AS calendar_date
+                      FROM calendar_events
+                      ORDER BY COALESCE(event_date, make_date(2026, 11, LEAST(GREATEST(date, 1), 30))), time""")
+    except UndefinedColumn:
+        return rows("""SELECT *, make_date(2026, 11, LEAST(GREATEST(date, 1), 30))::text AS calendar_date
+                      FROM calendar_events
+                      ORDER BY date, time""")
 
 
 @app.post("/api/calendar-events", status_code=201)
@@ -725,8 +731,15 @@ def create_calendar_event(body: dict[str, Any]):
             event_date = calendar_date_type.fromisoformat(str(body["date"]))
     except (TypeError, ValueError) as error:
         raise HTTPException(400, "date must be a valid calendar date in YYYY-MM-DD format") from error
-    return one(
-        """INSERT INTO calendar_events (title, date, event_date, type, time)
-           VALUES (%s, %s, %s, %s, %s) RETURNING *, event_date::text AS calendar_date""",
-        (required_text(body["title"], "title"), event_date.day, event_date, required_text(body["type"], "type"), required_text(body["time"], "time")),
-    )
+    try:
+        return one(
+            """INSERT INTO calendar_events (title, date, event_date, type, time)
+               VALUES (%s, %s, %s, %s, %s) RETURNING *, event_date::text AS calendar_date""",
+            (required_text(body["title"], "title"), event_date.day, event_date, required_text(body["type"], "type"), required_text(body["time"], "time")),
+        )
+    except UndefinedColumn:
+        return one(
+            """INSERT INTO calendar_events (title, date, type, time)
+               VALUES (%s, %s, %s, %s) RETURNING *, make_date(2026, 11, date)::text AS calendar_date""",
+            (required_text(body["title"], "title"), event_date.day, required_text(body["type"], "type"), required_text(body["time"], "time")),
+        )

@@ -14,7 +14,7 @@ type Modal = 'settings' | 'profile' | 'search' | 'notifications' | 'deadline' | 
 type Subject = { id?: number; name: string; code: string; grade: string; progress: number; color: string; next: string }
 type Deadline = { title: string; subject: string; date: string; tone: string }
 type Activity = { icon: string; title: string; detail: string; time: string; tone: string }
-type Profile = { name: string; term: string; year: string; avatar_url: string }
+type Profile = { name: string; term: string; year: string }
 type Goal = { id: number; title: string; completed: number }
 type Material = { id: number; subject_id: number; title: string; kind: string; url: string; folder: string; tags: string; favorite: number }
 type Note = { id: number; subject_id: number; title: string; content: string; format: string; folder: string; tags: string; favorite: number }
@@ -106,7 +106,7 @@ function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [showCustomizer, setShowCustomizer] = useState(false)
   const [widgets, setWidgets] = useState(initialWidgets)
-  const [profile, setProfile] = useState<Profile>({ name: '', term: '', year: '', avatar_url: '' })
+  const [profile, setProfile] = useState<Profile>({ name: '', term: '', year: '' })
   const [chatOpen, setChatOpen] = useState(false)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
@@ -460,19 +460,6 @@ function App() {
     fetch('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profile) }).then((response) => response.json()).then((savedProfile) => { setProfile(savedProfile); setModal(null); showToast('Profile updated') }).catch(() => showToast('Could not save profile'))
   }
 
-  const updateProfilePicture = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
-    if (!file.type.startsWith('image/')) { showToast('Choose an image file'); return }
-    if (file.size > 2 * 1024 * 1024) { showToast('Profile pictures must be 2 MB or smaller'); return }
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === 'string') setProfile((current) => ({ ...current, avatar_url: reader.result as string }))
-    }
-    reader.onerror = () => showToast('Could not read that image')
-    reader.readAsDataURL(file)
-  }
 
   const addGoal = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -665,7 +652,7 @@ function App() {
     <div className={`app-shell ${theme}`}>
       <aside className="sidebar">
         <div className="brand"><span className="brand-mark"><JusticeScale01Icon size={19} aria-hidden="true" /></span><span>polis</span></div>
-        <div className="profile-card"><div className="avatar">{profile.avatar_url ? <img src={profile.avatar_url} alt="" /> : profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</div><div><strong>{profile.name || 'Set up profile'}</strong><span>{profile.term || 'Add your academic details'}</span></div><button className="more-button" onClick={() => setModal('profile')} aria-label="Edit profile">•••</button></div>
+        <div className="profile-card"><div className="avatar">{profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</div><div><strong>{profile.name || 'Set up profile'}</strong><span>{profile.term || 'Add your academic details'}</span></div><button className="more-button" onClick={() => setModal('profile')} aria-label="Edit profile">•••</button></div>
         <button className="mobile-nav-toggle" aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileNavOpen} aria-controls="main-navigation" onClick={() => setMobileNavOpen((open) => !open)}><span className="mobile-nav-current"><small>SECTIONS</small><strong>{activeNav}</strong></span><span className={mobileNavOpen ? 'mobile-nav-chevron open' : 'mobile-nav-chevron'} aria-hidden="true">⌄</span></button>
         <nav id="main-navigation" className={mobileNavOpen ? 'nav-list mobile-open' : 'nav-list'} aria-label="Main navigation">
           {['Overview', 'My courses', 'Calendar', 'Insights', 'Study studio', 'AI recitation', 'Knowledge graph', 'Politics & governance', 'Debate simulator', 'Research assistant'].map((item) => <button key={item} aria-current={activeNav === item ? 'page' : undefined} className={activeNav === item ? 'nav-item active' : 'nav-item'} onClick={() => { openNav(item); setMobileNavOpen(false) }}><span className="nav-icon">{item === 'Overview' ? '⌂' : item === 'My courses' ? '▤' : item === 'Calendar' ? '□' : item === 'Insights' ? '⌁' : item === 'Knowledge graph' ? '⌘' : item === 'Debate simulator' ? '◇' : item === 'Research assistant' ? '⌕' : '✦'}</span>{item}</button>)}
@@ -677,7 +664,7 @@ function App() {
       </aside>
 
       <main className="main-content" onClick={() => { if (mobileNavOpen) setMobileNavOpen(false) }}>
-        <header className="topbar"><div className="breadcrumb"><span>Academic space</span><b>/</b><strong>{activeNav}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search" onClick={() => setModal('search')}>⌕</button><button className="icon-button notification-button" aria-label={unreadNotificationCount ? `Notifications, ${unreadNotificationCount} unread` : 'Notifications'} onClick={() => setModal('notifications')}>♢{unreadNotificationCount > 0 && <span className="notification-dot" />}</button><button className="theme-toggle" onClick={() => { setTheme(theme === 'light' ? 'dark' : 'light'); showToast(`${theme === 'light' ? 'Dark' : 'Light'} mode enabled`) }} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>{theme === 'light' ? '☾' : '☀'}</button><button className="mini-avatar" onClick={() => setModal('profile')} aria-label="Open profile">{profile.avatar_url ? <img src={profile.avatar_url} alt="" /> : profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</button></div></header>
+        <header className="topbar"><div className="breadcrumb"><span>Academic space</span><b>/</b><strong>{activeNav}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search" onClick={() => setModal('search')}>⌕</button><button className="icon-button notification-button" aria-label={unreadNotificationCount ? `Notifications, ${unreadNotificationCount} unread` : 'Notifications'} onClick={() => setModal('notifications')}>♢{unreadNotificationCount > 0 && <span className="notification-dot" />}</button><button className="theme-toggle" onClick={() => { setTheme(theme === 'light' ? 'dark' : 'light'); showToast(`${theme === 'light' ? 'Dark' : 'Light'} mode enabled`) }} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>{theme === 'light' ? '☾' : '☀'}</button><button className="mini-avatar" onClick={() => setModal('profile')} aria-label="Open profile">{profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</button></div></header>
         <section className="welcome-row"><div><p className="eyebrow">{currentDate}</p><h1>{profile.name ? `${greeting}, ${profile.name}` : 'Build your academic dashboard'} <span>✦</span></h1><p className="intro">{profile.name ? 'Your academic picture will update as you add progress.' : 'Add your profile and first subject to get started.'}</p></div><div className="welcome-actions"><button className="customize-button" onClick={() => setShowCustomizer(!showCustomizer)}>☷ Customize</button><button className="date-button" onClick={() => setModal('week')}>This week <span>⌄</span></button></div></section>
 
         {showCustomizer && <section className="customizer"><div><strong>Dashboard widgets</strong><span>Choose what you want to see.</span></div><div className="widget-options">{(Object.keys(widgets) as Widget[]).map((widget) => <label key={widget}><input type="checkbox" checked={widgets[widget]} onChange={() => toggleWidget(widget)} />{widget}</label>)}</div></section>}
@@ -719,7 +706,7 @@ function App() {
           {modal === 'search' && <><p className="eyebrow">FIND ANYTHING</p><h2>Search your academic space</h2><input className="modal-input" autoFocus placeholder="Search courses, deadlines, activity..." value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} /><div className="search-results">{searchQuery && (searchResults.length ? searchResults.map((result) => <button key={result} onClick={() => { setModal(null); showToast(`Opened ${result}`) }}>{result}<span>→</span></button>) : <p>No matching items found.</p>)}</div></>}
           {modal === 'notifications' && <><p className="eyebrow">UPDATES · {unreadNotificationCount} UNREAD</p><h2>Notifications</h2><NotificationDropdown items={notificationItems.map((item) => ({ id: item.id, title: item.title, detail: item.detail, label: item.label, read: readNotificationIds.includes(item.id), onClick: () => openNotification(item) }))} /><button className="modal-primary" disabled={!unreadNotificationCount} onClick={() => markNotificationsRead(notificationItems.map((item) => item.id))}>{unreadNotificationCount ? 'Mark all as read' : 'All caught up'}</button></>}
           {modal === 'settings' && <><p className="eyebrow">PERSONALIZE</p><h2>Settings</h2><div className="settings-list"><label>Theme <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>{theme === 'light' ? 'Light' : 'Dark'} ↔</button></label><label>Weekly digest <input type="checkbox" defaultChecked /></label><label>Deadline reminders <input type="checkbox" defaultChecked /></label></div><button className="modal-primary" onClick={() => { setModal(null); showToast('Settings saved') }}>Done</button></>}
-          {modal === 'profile' && <form onSubmit={saveProfile}><p className="eyebrow">YOUR ACCOUNT</p><h2>Edit profile</h2><div className="profile-picture-editor"><div className="profile-picture-preview">{profile.avatar_url ? <img src={profile.avatar_url} alt="Profile preview" /> : profile.name ? profile.name.slice(0, 2).toUpperCase() : '?'}</div><div><label className="profile-picture-upload">Choose profile picture<input type="file" accept="image/*" onChange={updateProfilePicture} /></label><small>JPG, PNG, GIF, or WebP up to 2 MB.</small></div></div><input className="modal-input" required placeholder="Your name" value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} /><input className="modal-input" placeholder="Term (e.g. Fall 2026)" value={profile.term} onChange={(event) => setProfile({ ...profile, term: event.target.value })} /><input className="modal-input" placeholder="Year or program" value={profile.year} onChange={(event) => setProfile({ ...profile, year: event.target.value })} /><button className="modal-primary" type="submit">Save profile</button></form>}
+          {modal === 'profile' && <form onSubmit={saveProfile}><p className="eyebrow">YOUR ACCOUNT</p><h2>Edit profile</h2><input className="modal-input" required placeholder="Your name" value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} /><input className="modal-input" placeholder="Term (e.g. Fall 2026)" value={profile.term} onChange={(event) => setProfile({ ...profile, term: event.target.value })} /><input className="modal-input" placeholder="Year or program" value={profile.year} onChange={(event) => setProfile({ ...profile, year: event.target.value })} /><button className="modal-primary" type="submit">Save profile</button></form>}
           {modal === 'routine' && <><p className="eyebrow">PERSONALIZE</p><h2>Customize routine</h2><form onSubmit={addGoal} className="inline-form"><input className="modal-input" required placeholder="Add a study goal" value={newGoal} onChange={(event) => setNewGoal(event.target.value)} /><button className="modal-primary" type="submit">Add goal</button></form><div className="modal-list">{goals.map((goal) => <div key={goal.id}><strong>{goal.title}<button className="delete-goal" onClick={() => { fetch(`/api/goals/${goal.id}`, { method: 'DELETE' }); setGoals((current) => current.filter((item) => item.id !== goal.id)) }}>Remove</button></strong><span>{goal.completed ? 'Completed' : 'Not completed'}</span></div>)}</div></>}
           {modal === 'week' && <><p className="eyebrow">DATE RANGE</p><h2>Plan your study week</h2><div className="range-options">{['This week', 'Next week', 'This month'].map((range) => <button key={range} onClick={() => { setModal(null); showToast(`${range} selected`) }}>{range}<span>→</span></button>)}</div></>}
           {modal === 'courses' && <><p className="eyebrow">MY COURSES</p><h2>All subjects</h2><div className="modal-list">{subjectItems.map((subject) => <div key={subject.name}><strong>{subject.name} <em>{subject.grade}</em></strong><span>{subject.code} · {subject.progress}% complete</span></div>)}</div></>}

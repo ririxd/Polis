@@ -6,7 +6,6 @@
 .study-panel h2 { margin: 3px 0 8px; color: var(--ink); font: 500 20px Georgia, serif; }
 .study-panel-heading { display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; }
 .study-panel-heading .eyebrow, .study-panel > .eyebrow { margin: 0; color: var(--purple); font: 9px 'DM Mono', monospace; letter-spacing: .12em; }
-.study-form-hint { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
 .study-tool-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin-bottom: 14px; }
 .study-tool-card { min-height: 92px; padding: 13px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--surface); text-align: left; cursor: pointer; }
 .study-tool-card:hover, .study-tool-card.active { border-color: var(--purple); background: color-mix(in srgb, var(--purple) 7%, var(--surface)); }

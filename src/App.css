@@ -194,6 +194,31 @@
   .nav-list { right: 9px; left: 9px; }
 }
 .notification-button { min-width: 28px; }.notification-list { display: grid; max-height: min(48vh, 360px); overflow-y: auto; margin: 4px 0 12px; border-top: 1px solid var(--line); }.notification-item { width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 14px 2px; border: 0; border-bottom: 1px solid var(--line); color: var(--muted); background: transparent; text-align: left; cursor: pointer; }.notification-item:hover { background: var(--bg); }.notification-copy { min-width: 0; flex: 1; }.notification-copy strong, .notification-copy > span { display: block; }.notification-copy strong { color: var(--ink); font-size: 11px; font-weight: 550; }.notification-copy > span { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.45; }.notification-item.read .notification-copy strong { color: var(--muted); font-weight: 400; }.notification-status { flex: 0 0 auto; padding: 4px 7px; border-radius: 5px; color: var(--purple); background: var(--sidebar); font: 9px 'DM Mono', monospace; }.notification-item.read .notification-status { color: var(--soft); background: var(--bg); }.notification-empty { display: grid; justify-items: center; gap: 8px; padding: 24px 12px; text-align: center; }.notification-empty > span { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--purple); }.notification-empty strong { color: var(--ink); font: 500 16px Georgia, serif; }.notification-empty p { max-width: 250px; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }.modal-primary:disabled { opacity: .55; cursor: default; }
+.notification-dropdown { overflow: hidden; margin: 10px 0 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); transition: border-radius .35s ease, box-shadow .35s ease; }
+.notification-dropdown.is-open { border-radius: 16px; box-shadow: 0 12px 28px rgba(57, 28, 40, .12); }
+.notification-dropdown-header { width: 100%; display: flex; align-items: center; gap: 12px; padding: 13px; border: 0; color: var(--ink); background: transparent; text-align: left; cursor: pointer; }
+.notification-bell { width: 34px; height: 34px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 9px; color: var(--muted); background: var(--bg); font-size: 20px; }
+.notification-dropdown-heading { min-width: 0; flex: 1; }
+.notification-dropdown-heading strong, .notification-dropdown-heading > span { display: block; }
+.notification-dropdown-heading strong { font-size: 12px; font-weight: 600; }
+.notification-dropdown-heading > span { max-height: 18px; margin-top: 3px; overflow: hidden; color: var(--soft); font-size: 10px; opacity: 1; transition: max-height .35s ease, margin .35s ease, opacity .35s ease; }
+.notification-dropdown.is-open .notification-dropdown-heading > span { max-height: 0; margin-top: 0; opacity: 0; }
+.notification-dropdown-chevron { color: var(--soft); font-size: 18px; line-height: 12px; transform: rotate(180deg); transition: color .35s ease, transform .35s ease; }
+.notification-dropdown.is-open .notification-dropdown-chevron { color: var(--purple); transform: rotate(0); }
+.notification-dropdown-content { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .4s cubic-bezier(.4, 0, .2, 1), opacity .4s ease; }
+.notification-dropdown.is-open .notification-dropdown-content { grid-template-rows: 1fr; opacity: 1; }
+.notification-dropdown-list { min-height: 0; overflow: hidden; padding: 0 8px 8px; }
+.notification-dropdown-item { width: 100%; display: flex; align-items: flex-start; gap: 10px; padding: 9px; border: 0; border-radius: 9px; color: var(--muted); background: transparent; text-align: left; cursor: pointer; opacity: 0; transform: translateY(10px); transition: background .18s ease, color .18s ease, opacity .4s ease, transform .4s ease; }
+.notification-dropdown.is-open .notification-dropdown-item { opacity: 1; transform: translateY(0); }
+.notification-dropdown-item:hover { background: var(--bg); }
+.notification-dropdown-icon { width: 28px; height: 28px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 8px; color: var(--purple); background: var(--bg); font-size: 13px; }
+.notification-dropdown-copy { min-width: 0; flex: 1; }
+.notification-dropdown-copy strong, .notification-dropdown-copy > span { display: block; }
+.notification-dropdown-copy strong { color: var(--ink); font-size: 10px; font-weight: 600; }
+.notification-dropdown-copy > span { margin-top: 3px; color: var(--soft); font-size: 9px; line-height: 1.4; }
+.notification-dropdown-time { flex: 0 0 auto; padding-top: 2px; color: var(--soft); font: 8px 'DM Mono', monospace; }
+.notification-dropdown-item.is-read { opacity: .7; }
+.notification-dropdown-empty { margin: 0; padding: 12px 8px 6px; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .brand-mark { background: #d85c86; }.avatar, .mini-avatar { background: #e783a4; }.nav-item:hover, .nav-item.active { background: #ffe0ea; }.dark .nav-item:hover, .dark .nav-item.active { background: #553241; }.active .nav-icon { color: var(--purple); }.notification-dot { background: #e05d86; }.welcome-row h1 span { color: #e783a4; }.customize-button { color: var(--purple); }.overview-banner { background: linear-gradient(110deg, #d85c86, #ee8eac); box-shadow: 0 10px 24px rgba(216, 92, 134, .18); }.overview-banner .eyebrow { color: #ffe8f0; }.overview-banner p:last-child { color: #fff0f5; }.overview-banner p span { color: #ffd2e0; }.semester-ring::before { background: #df7195; }.semester-ring span { color: #ffe5ee; }.subject-icon.violet, .activity-icon.violet { color: #c44f79; background: #ffe5ee; }.subject-icon.terracotta, .activity-icon.terracotta { color: #d15c83; background: #ffe8ef; }.subject-icon.sage { color: #bd5c80; background: #ffe8ef; }.subject-icon.blue, .activity-icon.blue { color: #b94d78; background: #fbe4ed; }.subject-progress span.terracotta { background: #e783a4; }.subject-progress span.sage { background: #df7195; }.subject-progress span.blue { background: #d85c86; }.deadline-dot { background: #df7195; }.deadline-dot.urgent { background: #d85c86; }.plan-count { color: #c44f79; background: #ffe5ee; }.goal-progress span { background: #d85c86; }
 
 /* Shared visual polish */
